@@ -2,3 +2,4 @@ test
 virtualenv*
 *.cfg
 *~
+*.pyc
