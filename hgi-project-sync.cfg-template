@@ -1,0 +1,11 @@
+[ldap]
+ldap_uri = ldap://ldap.example.com
+group_base_dn = ou=group,dc=example,dc=com
+group_filter = (objectClass=posixGroup)
+group_search_fmt = (cn=%s)
+group_member_uid_attribute = memberUid
+user_base_dn = ou=person,dc=example,dc=com
+user_search_uid_fmt = (uid=%s)
+
+[db]
+db_uri = mysql://user:pass@localhost/projects_db
