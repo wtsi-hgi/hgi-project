@@ -22,7 +22,7 @@ import os
 import argparse
 import logging
 import ConfigParser
-import hgi.project.ldap
+from hgi.project import sync
 #import HGIProject.Client
 #from multiprocessing import Process
 
@@ -91,7 +91,7 @@ def main():
         print 'hgi-project-sync user: action=%s odn=%s dn=%s attrs=%s config=%s' % (action, odn, dn, attrs, config)
 
     _log.info('starting sync for usergroup_filter %s' % (usergroup_filter))
-    hgi.project.ldap.Sync(
+    sync.ldap_sync(
         ldap_uri = config.get('ldap','uri'),
         ldap_base_dn = config.get('ldap','base_dn'),
         ldap_filter = usergroup_filter,

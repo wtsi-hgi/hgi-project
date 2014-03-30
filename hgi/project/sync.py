@@ -19,12 +19,12 @@
 #
 import logging
 import ldap
-import ldap.syncrepl
+from ldap import ldapobject, syncrepl
 import time
 import exceptions
 import anydbm
 
-class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
+class LDAPSync(ldapobject.LDAPObject, syncrepl.SyncreplConsumer):
 
     @staticmethod 
     def _default_print_cb(action='', odn='', dn='', attrs={}):
@@ -35,7 +35,7 @@ class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
             callback = LDAPSync._default_print_cb
         self.__log = logging.getLogger(__name__)
         self.__log.debug("LDAPSync.__init__")
-        ldap.ldapobject.LDAPObject.__init__(self, ldap_uri, **kwargs)
+        ldapobject.LDAPObject.__init__(self, ldap_uri, **kwargs)
         self.__callback = callback
         self.__db = anydbm.open(tempfile, 'c', 0640)
         self.__presentUUIDs = {}
@@ -86,7 +86,7 @@ class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
 
 
 
-def Sync(ldap_uri = 'ldap://localhost', 
+def ldap_sync(ldap_uri = 'ldap://localhost', 
          ldap_base_dn = '', 
          ldap_filter = '', 
          ldap_attrlist = None,
