@@ -2,9 +2,9 @@
 #
 # Author: Joshua C. Randall <jcrandall@alum.mit.edu>
 #
-# This file is part of HGIProject.
+# This file is part of HGIP.
 #
-# HGIProject is free software: you can redistribute it and/or modify it under
+# HGIP is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 3 of the License, or (at your option) any later
 # version.
@@ -22,8 +22,7 @@ import os
 import argparse
 import logging
 import ConfigParser
-from hgi.project import sync
-#import HGIProject.Client
+from hgip import sync
 #from multiprocessing import Process
 
 #def group_callback(*args):
@@ -46,7 +45,8 @@ def main():
 
     # read configuration from config file
     config = ConfigParser.RawConfigParser()
-    config.read(['hgi-project-sync.cfg', os.path.expanduser('~/.hgi-project-sync.cfg')])
+    config_files = config.read(['hgi-project-sync.cfg', os.path.expanduser('~/.hgi-project-sync.cfg')])
+    _log.info('read configuration from %s' % (config_files))
 
     # 
     gids = [ 967, 994, 1056, 1082, 1098, 1115, 1118, 1158, 1159, 1163, 1178, 1185, 1195, 1313, 1319, 1320, 1324, 1331, 1332, 1336, 1337, 1338, 1339, 1342, 1344, 1345, 1347, 1349, 1350, 1355, 1360, 1363, 1365, 1376, 1384, 1387, 1396, 1402, 1407, 1417, 1418, 1420, 1421, 1422, 1425, 1426, 1432, 1433, 1434, 1435, 1437, 1439, 1444, 1449 ]
