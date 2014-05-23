@@ -49,7 +49,7 @@ def main():
     if args.config_file:
         config_files = config.read([args.config_file])
     else:
-        config_files = config.read(['hgi-project.cfg', os.path.expanduser('~/.hgi-project.cfg')])
+        config_files = config.read(['hgi-project.cfg', os.path.expanduser('~/.hgi-project')])
     _log.info('read configuration from %s' % (config_files))
 
     # configure sqlalchemy engine
