@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 #
+import os
 import ConfigParser
 
 from flask import Flask
@@ -31,10 +32,7 @@ app = Flask(__name__)
 
 # read configuration from config file
 config = ConfigParser.RawConfigParser()
-if args.config_file:
-    config_files = config.read([args.config_file])
-else:
-    config_files = config.read(['hgi-project.cfg', os.path.expanduser('~/.hgi-project')])
+config_files = config.read(['hgi-project.cfg', os.path.expanduser('~/.hgi-project')])
 
 # configure flask sqlalchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
