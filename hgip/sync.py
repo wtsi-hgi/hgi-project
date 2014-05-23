@@ -2,9 +2,9 @@
 #
 # Author: Joshua C. Randall <jcrandall@alum.mit.edu>
 #
-# This file is part of HGIProject.
+# This file is part of HGIP.
 #
-# HGIProject is free software: you can redistribute it and/or modify it under
+# HGIP is free software: you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
 # Foundation; either version 3 of the License, or (at your option) any later
 # version.
@@ -19,18 +19,25 @@
 #
 import logging
 import ldap
-import ldap.syncrepl
+from ldap import ldapobject, syncrepl
 import time
 import exceptions
 import anydbm
 
-class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
+class LDAPSync(ldapobject.LDAPObject, syncrepl.SyncreplConsumer):
 
-    def __init__(self, *args, **kwargs):
+    @staticmethod 
+    def _default_print_cb(action='', odn='', dn='', attrs={}):
+        print 'LDAPSync: action=%s dn=%s odn=%s attrs=%.50s...' % (action, odn, dn, attrs)
+
+    def __init__(self, callback=None, ldap_uri='', tempfile='ldapsync.dbm', **kwargs):
+        if callback == None:
+            callback = LDAPSync._default_print_cb
         self.__log = logging.getLogger(__name__)
         self.__log.debug("LDAPSync.__init__")
-        ldap.ldapobject.LDAPObject.__init__(self, *args, **kwargs)
-        self.__db = anydbm.open('/tmp/testdb.dbm', 'c', 0640)
+        ldapobject.LDAPObject.__init__(self, ldap_uri, **kwargs)
+        self.__callback = callback
+        self.__db = anydbm.open(tempfile, 'c', 0640)
         self.__presentUUIDs = {}
 
     def syncrepl_set_cookie(self,cookie):
@@ -47,7 +54,7 @@ class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
         self.__log.debug("LDAPSync.syncrepl_delete. uuids=" + str(uuids))
         for uuid in uuids:
             dn = self.__db[uuid]
-            print "delete %s" % dn
+            self.__callback(action="delete", dn=dn)
             del self.__db[uuid]
 
     def syncrepl_present(self, uuids, refreshDeletes=False):
@@ -70,28 +77,26 @@ class LDAPSync(ldap.ldapobject.LDAPObject, ldap.syncrepl.SyncreplConsumer):
         if uuid in self.__db:
             odn = self.__db[uuid]
             if odn != dn:
-                print "moddn %s -> %s" % ( odn, dn )
+                self.__callback(action="moddn", odn=odn, dn=dn, attrs=attrs)
             else:
-                print "modify %s" % self.__db[uuid]
+                self.__callback(action="modify", dn=dn, attrs=attrs)
         else:
-            print "add %s" % dn
+            self.__callback(action="add", dn=dn, attrs=attrs)
         self.__db[uuid] = dn
 
 
 
-def Sync(ldap_uri = 'ldap://localhost', 
-         group_base_dn = '', 
-         group_filter = '', 
-         group_search_fmt = '(cn=%s)',
-         group_member_uid_attribute = 'memberUid',
-         user_base_dn = '',
-         user_search_uid_fmt = '(uid=%s)',
+def ldap_sync(ldap_uri = 'ldap://localhost', 
+         ldap_base_dn = '', 
+         ldap_filter = '', 
+         ldap_attrlist = None,
+         callback = None, 
          ):
     _log = logging.getLogger(__name__)
 
     _log.debug("Sync(): ")
 
-    ldap_sync_conn = LDAPSync(ldap_uri)
+    ldap_sync_conn = LDAPSync(ldap_uri=ldap_uri, callback=callback, tempfile='/tmp/ldapsync.dbm')
 
     _log.debug("hgi-project-sync: " + str(ldap_sync_conn))
 
@@ -102,11 +107,12 @@ def Sync(ldap_uri = 'ldap://localhost',
         raise Exception('LDAP bind failed');
 
     msgid = ldap_sync_conn.syncrepl_search(
-        group_base_dn, 
-        ldap.SCOPE_SUBTREE, 
-        cookie = None, 
+        base = ldap_base_dn, 
+        scope = ldap.SCOPE_SUBTREE, 
         mode = 'refreshAndPersist',
-        filterstr = group_filter, 
+        cookie = None, 
+        filterstr = ldap_filter, 
+        attrlist = ldap_attrlist, 
         )
 
     try:
