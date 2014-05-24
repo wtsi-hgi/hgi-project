@@ -14,5 +14,3 @@ WORKDIR /docker
 RUN apt-get install -y libmysqlclient-dev
 RUN pip install -r /docker/requirements.txt
 
-# Compile redsocks
-RUN make
