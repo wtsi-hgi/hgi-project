@@ -10,6 +10,7 @@ MAINTAINER "Joshua C. Randall" <jcrandall@alum.mit.edu>
 ADD . /docker
 
 # Install Prerequisites
+RUN apt-get install -y libmysqlclient18
 RUN pip install -r /docker/requirements.txt
 
 WORKDIR /docker
