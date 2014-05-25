@@ -18,6 +18,7 @@
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 #
 import ConfigParser
+import os
 
 from flask import Flask
 from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
