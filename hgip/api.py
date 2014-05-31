@@ -28,6 +28,8 @@ import json
 import models as m
 from flask.ext.sqlalchemy import SQLAlchemy
 
+from werkzeug.exceptions import HTTPException
+
 app = Flask(__name__)
 
 # read configuration from config file
@@ -39,34 +41,52 @@ app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
 db = SQLAlchemy(app)
 
 # configure flask restful
-api = Api(app)
+api = Api(app, default_mediatype=None, catch_all_404s=True)
 
+@app.errorhandler(HTTPException)
+def handle_invalid_usage(error):
+    response = jsonify(error.to_dict())
+    response.status_code = error.status_code
+    return response
 
 def abort_if_project_doesnt_exist(project_name):
     project_names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == project_name)]
     if project_name not in project_names:
         abort(404, message="Project {0} doesn't exist.".format(project_name))
 
+def abort_if_user_doesnt_exist(username):
+    usernames = [p.username for p in db.session.query(m.User).filter(m.User.username == username)]
+    if username not in usernames:
+        abort(404, message="User {0} doesn't exist.".format(username))
+
 parser = reqparse.RequestParser()
 parser.add_argument('gid', type=str)
 
 
-#@api.representation('application/json')
 #@api.representation('text/plain')
-#def json_rep(data, status_code, headers=None):
-#    resp = api.make_response(json.dumps(data), status_code)
-#    resp.headers.extend(headers or {})
-#    return resp
+@api.representation('application/json')
+def json_rep(data, status_code, headers=None):
+    resp = app.make_response((json.dumps(data), status_code, headers))
+    return resp
     
-#@api.representation('application/xhtml+xml')
-#def xhtml_rep(data, status_code, headers):
-#     #        resp = make_response(convert_data_to_xml(data), code)
-#     pass
+@api.representation('application/xhtml+xml')
+def xhtml_rep(data, status_code, headers=None):
+    resp = app.make_response((
+            "<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t<body>\n\t\t<pre>\n%s\n\t\t</pre>\n\t</body>\n</html>\n" % (data), 
+            status_code,
+            headers,
+            ))
+    return resp
     
 # @api.representation('application/xml')
 # def xml_rep(data, status_code, headers):
 #     #        resp = make_response(convert_data_to_xml(data), code)
 #     pass
+
+
+@app.errorhandler(406)
+def not_acceptable(error):
+    return make_response(jsonify( {'error': 'Not Acceptable'} ), 406)
 
 # def external_url_handler(error, endpoint, values):
 #     "Looks up an external URL when `url_for` cannot build a URL."
@@ -107,10 +127,35 @@ enum_fields = {
     'description': fields.String,
 }
 
-project_fields = {
+project_core_fields = {
+    'project_name': fields.String(attribute='name'),
+    'link': fields.Url('project'),
+}
+
+user_core_fields = {
+    'username': fields.String,
+    'link': fields.Url('user'),
+}
+
+project_fields = project_core_fields.copy()
+project_fields.update({
+        'gid': fields.Integer,
+        'sec_level': EnumDescription,
+        'owners': fields.Nested(user_core_fields),
+        'users': fields.Nested(user_core_fields),
+        })
+
+user_fields = user_core_fields.copy()
+user_fields.update({
+        'uid': fields.Integer,
+        'farm_user': fields.Boolean,
+        'memberof_projects': fields.Nested(project_core_fields),
+        'ownerof_projects': fields.Nested(project_core_fields),
+        })
+
+project_list_fields = {
     'project_name': fields.String(attribute='name'),
     'gid': fields.Integer,
-#    'sec_level': fields.Nested(nested=enum_fields),
     'sec_level': EnumDescription,
     'uri': fields.Url('project'),
 }
@@ -147,9 +192,10 @@ class Project(Resource):
 # ProjectList
 #   shows a list of all projects, and lets you POST to add new project
 class ProjectList(Resource):
+    @marshal_with(project_list_fields)
     def get(self):
-        projects = db.session.query(m.Project.name).all()
-        return [p.name for p in projects]
+        projects = db.session.query(m.Project).all()
+        return projects
 
     def post(self):
         args = parser.parse_args()
@@ -164,6 +210,23 @@ class ProjectList(Resource):
             raise
         return project, 201
 
+class User(Resource):
+    @marshal_with(user_fields)
+    def get(self, username):
+        abort_if_user_doesnt_exist(username)
+        user = db.session.query(m.User).filter(m.User.username == username)[0]
+        return user
+        
+    def delete(self, name):
+        abort_if_project_doesnt_exist(name)
+        abort(500, message="Delete not implemented.")
+        
+    def put(self, name):
+        args = parser.parse_args()
+        abort(500, message="Put not implemented.")
+
+
+
 ##
 ## Actually setup the Api resource routing here
 ##
@@ -171,6 +234,7 @@ class ProjectList(Resource):
 ## used in the actual model object returned (before marshalling).
 api.add_resource(ProjectList, '/projects/')
 api.add_resource(Project, '/projects/<string:name>')
+api.add_resource(User, '/users/<string:username>')
 
 #@app.route('/')
 
