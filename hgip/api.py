@@ -34,7 +34,7 @@ app = Flask(__name__)
 
 # read configuration from config file
 config = ConfigParser.RawConfigParser()
-config_files = config.read(['hgi-project.cfg', os.path.expanduser('~/.hgi-project')])
+config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
 
 # configure flask sqlalchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
