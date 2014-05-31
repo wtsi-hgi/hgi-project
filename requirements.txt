@@ -1,5 +1,5 @@
 Flask==0.10.1
-Flask-RESTful==git+https://github.com/wtsi-hgi/flask-restful.git@master#egg=Flask-RESTful
+git+https://github.com/wtsi-hgi/flask-restful.git@master#egg=Flask-RESTful
 Flask-SQLAlchemy==1.0
 MySQL-python==1.2.5
 SQLAlchemy==0.9.4
