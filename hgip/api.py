@@ -28,8 +28,6 @@ import json
 import models as m
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from werkzeug.exceptions import HTTPException
-
 app = Flask(__name__)
 
 # read configuration from config file
@@ -40,14 +38,17 @@ config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-p
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
 db = SQLAlchemy(app)
 
-# configure flask restful
-api = Api(app, default_mediatype=None, catch_all_404s=True)
+# setup custom error messages
+errors = {
+    'NotAcceptable': {
+        'message': "Your client indicated that it does not accept any of the representations we support.",
+        'status': 406,
+        },
+}
 
-@app.errorhandler(HTTPException)
-def handle_invalid_usage(error):
-    response = jsonify(error.to_dict())
-    response.status_code = error.status_code
-    return response
+# configure flask restful
+api = Api(app, default_mediatype=None, catch_all_404s=True, errors=errors)
+
 
 def abort_if_project_doesnt_exist(project_name):
     project_names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == project_name)]
@@ -63,12 +64,12 @@ parser = reqparse.RequestParser()
 parser.add_argument('gid', type=str)
 
 
-#@api.representation('text/plain')
 @api.representation('application/json')
+@api.representation('text/plain')
 def json_rep(data, status_code, headers=None):
     resp = app.make_response((json.dumps(data), status_code, headers))
     return resp
-    
+
 @api.representation('application/xhtml+xml')
 def xhtml_rep(data, status_code, headers=None):
     resp = app.make_response((
@@ -83,10 +84,6 @@ def xhtml_rep(data, status_code, headers=None):
 #     #        resp = make_response(convert_data_to_xml(data), code)
 #     pass
 
-
-@app.errorhandler(406)
-def not_acceptable(error):
-    return make_response(jsonify( {'error': 'Not Acceptable'} ), 406)
 
 # def external_url_handler(error, endpoint, values):
 #     "Looks up an external URL when `url_for` cannot build a URL."
@@ -108,14 +105,6 @@ def not_acceptable(error):
 #     return url
 #
 # app.handle_url_build_error = external_url_handler
-
-#class RandomNumber(fields.Raw):
-#    def output(self, key, obj):
-#        return random.random()
-
-#class AlwaysFive(fields.Raw):
-#    def output(self, key, obj):
-#        return 5
 
 class EnumDescription(fields.Raw):
     def output(self, key, obj):
