@@ -51,10 +51,10 @@ errors = {
 api = Api(app, default_mediatype=None, catch_all_404s=True, errors=errors)
 
 
-def abort_if_project_doesnt_exist(project_name):
-    project_names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == project_name)]
-    if project_name not in project_names:
-        abort(404, message="Project {0} doesn't exist.".format(project_name))
+def abort_if_project_doesnt_exist(name):
+    names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == name)]
+    if name not in names:
+        abort(404, message="Project {0} doesn't exist.".format(name))
 
 def abort_if_user_doesnt_exist(username):
     usernames = [p.username for p in db.session.query(m.User).filter(m.User.username == username)]
@@ -73,7 +73,7 @@ def json_rep(data, status_code, headers=None):
 
 @api.representation('application/xhtml+xml')
 def xhtml_rep(data, status_code, headers=None):
-    html = render_template('./data.xhtml', data=data)
+    html = render_template('./data.xhtml', data=data, title="data")
     resp = app.make_response((
             html,
             status_code,
@@ -145,7 +145,7 @@ enum_fields = {
 }
 
 project_core_fields = {
-    'project_name': fields.String(attribute='name'),
+    'name': fields.String,
 }
 
 user_core_fields = {
@@ -185,20 +185,23 @@ user_fields.update({
         'uid': fields.Integer,
         'farm_user': fields.Boolean,
         'memberof_projects': fields.Nested({
-                'project_name': fields.String(attribute='name'),
+                'name': fields.String,
                 'link': RelatedLink('project', 'x-member-of')
                 }),
         'ownerof_projects': fields.Nested({
-                'project_name': fields.String(attribute='name'),
+                'name': fields.String,
                 'link': RelatedLink('project', 'x-owner-of')
                 }),
         })
 
 project_list_fields = {
-    'project_name': fields.String(attribute='name'),
-    'gid': fields.Integer,
-    'sec_level': EnumDescription,
+    'name': fields.String,
     'link': RelatedLink('project', 'self'),
+}
+
+user_list_fields = {
+    'username': fields.String,
+    'link': RelatedLink('user', 'self'),
 }
 
 # Project
@@ -212,9 +215,9 @@ class Project(Resource):
         
     def delete(self, name):
         abort_if_project_doesnt_exist(name)
-        abort(500, message="Delete not implemented.")
-        #del db.session.query(m.Project).filter(m.Project.name == name)[0]
-#        return '', 204
+#        abort(500, message="Delete not implemented.")
+        del db.session.query(m.Project).filter(m.Project.name == name)[0]
+        return '', 204
         
     def put(self, name):
         args = parser.parse_args()
@@ -240,7 +243,7 @@ class ProjectList(Resource):
 
     def post(self):
         args = parser.parse_args()
-        name = {'project_name': args['project_name']}
+        name = {'name': args['name']}
         project = models.Project(name=name)
         session.add(project)
         try:
@@ -266,6 +269,25 @@ class User(Resource):
         args = parser.parse_args()
         abort(500, message="Put not implemented.")
 
+class UserList(Resource):
+    @marshal_with(user_list_fields)
+    def get(self):
+        users = db.session.query(m.User).all()
+        return users
+
+    def post(self):
+        args = parser.parse_args()
+        name = {'name': args['name']}
+        user = models.User(name=name)
+        session.add(user)
+        try:
+            session.commit()
+        except: 
+            session.rollback()
+            #return '', 500
+            raise
+        return user, 201
+
 
 
 ##
@@ -275,6 +297,7 @@ class User(Resource):
 ## used in the actual model object returned (before marshalling).
 api.add_resource(ProjectList, '/projects/')
 api.add_resource(Project, '/projects/<string:name>')
+api.add_resource(UserList, '/users/')
 api.add_resource(User, '/users/<string:username>')
 
 #@app.route('/')

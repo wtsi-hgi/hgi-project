@@ -19,7 +19,7 @@
 	  <dd>{{ nested_entry(key, entry_data[key]) }}</dd> 
 	{% else %}
 	  <!-- no data -->
-	  (empty mapping)
+	  (none)
 	{% endfor %}
       </dl>
       {% elif entry_data is sequence %}
@@ -28,7 +28,7 @@
 	<li>{{ nested_entry(loop.index, item) }}</li>
 	{% else %}
 	<!-- no data -->
-	(empty sequence)
+	(none)
 	{% endfor %}
       </ul>
       {% else %}
@@ -40,18 +40,11 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <title>foo</title>
+    <title>{{ title }}</title>
   </head>
   <body>
     <div class="data">
-      <dl>
-      {% for entry in data %}
-      <dt>{{ entry }}</dt>
-      <dd>{{ nested_entry(entry, data[entry]) }}</dd>
-      {% else %}
-      <!-- no data -->
-      {% endfor %}
-      </dl>
+      {{ nested_entry(title, data) }}
     </div>
   </body>
 </html>
