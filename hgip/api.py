@@ -20,10 +20,11 @@
 import ConfigParser
 import os
 
-from flask import Flask
+from flask import Flask, render_template
 from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
 
 import json
+from xml.sax.saxutils import escape
 
 import models as m
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -64,20 +65,22 @@ parser = reqparse.RequestParser()
 parser.add_argument('gid', type=str)
 
 
-@api.representation('application/json')
 @api.representation('text/plain')
+@api.representation('application/json')
 def json_rep(data, status_code, headers=None):
     resp = app.make_response((json.dumps(data), status_code, headers))
     return resp
 
 @api.representation('application/xhtml+xml')
 def xhtml_rep(data, status_code, headers=None):
+    html = render_template('./data.xhtml', data=data)
     resp = app.make_response((
-            "<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n\t<body>\n\t\t<pre>\n%s\n\t\t</pre>\n\t</body>\n</html>\n" % (data), 
+            html,
             status_code,
             headers,
             ))
     return resp
+
     
 # @api.representation('application/xml')
 # def xml_rep(data, status_code, headers):
@@ -110,6 +113,31 @@ class EnumDescription(fields.Raw):
     def output(self, key, obj):
         return getattr(obj,key).description
 
+# class RelatedLink(fields.Raw):
+#     def __init__(self, rel, **kwargs):
+#         self.rel = rel
+#         super(RelatedLink, self).__init__(**kwargs)
+
+#     def output(self, key, obj):
+#         value = get_value(key if self.attribute is None else self.attribute, obj)
+
+#         return marshal({'hrefvalue, {
+#                 'href': fields.String,
+#                 'rel': fields.String,
+#                 })
+
+class RelatedLink(fields.Url):
+    def __init__(self, endpoint, rel, **kwargs):
+        self.rel = rel
+        super(RelatedLink, self).__init__(endpoint, **kwargs)
+
+    def output(self, key, obj):
+        return {
+            'rel': self.rel, 
+            'href': super(RelatedLink, self).output(key, obj),
+            'description': str(obj),
+            }
+
 enum_fields = {
     'name': fields.String,
     'value': fields.String,
@@ -118,35 +146,59 @@ enum_fields = {
 
 project_core_fields = {
     'project_name': fields.String(attribute='name'),
-    'link': fields.Url('project'),
 }
 
 user_core_fields = {
     'username': fields.String,
-    'link': fields.Url('user'),
 }
 
 project_fields = project_core_fields.copy()
 project_fields.update({
+        'link': RelatedLink('project', 'self'),
         'gid': fields.Integer,
         'sec_level': EnumDescription,
-        'owners': fields.Nested(user_core_fields),
-        'users': fields.Nested(user_core_fields),
+        'owners': fields.Nested({
+                'username': fields.String,
+                'link': RelatedLink('user','x-owner')
+                }),
+        'members': fields.Nested({
+                'username': fields.String,
+                'link': RelatedLink('user','x-member')
+                },
+                                 attribute='users', 
+            ),
         })
+
+# project_linked_fields = project_core_fields.copy()
+# project_linked_fields.update({
+#         'link': RelatedLink('project', 'x-project'),
+#         })
+
+# user_linked_fields = user_core_fields.copy()
+# user_linked_fields.update({
+#         'link': RelatedLink('user', 'x-member'),
+#         })
 
 user_fields = user_core_fields.copy()
 user_fields.update({
+        'link': RelatedLink('user', 'self'),
         'uid': fields.Integer,
         'farm_user': fields.Boolean,
-        'memberof_projects': fields.Nested(project_core_fields),
-        'ownerof_projects': fields.Nested(project_core_fields),
+        'memberof_projects': fields.Nested({
+                'project_name': fields.String(attribute='name'),
+                'link': RelatedLink('project', 'x-member-of')
+                }),
+        'ownerof_projects': fields.Nested({
+                'project_name': fields.String(attribute='name'),
+                'link': RelatedLink('project', 'x-owner-of')
+                }),
         })
 
 project_list_fields = {
     'project_name': fields.String(attribute='name'),
     'gid': fields.Integer,
     'sec_level': EnumDescription,
-    'uri': fields.Url('project'),
+    'link': RelatedLink('project', 'self'),
 }
 
 # Project

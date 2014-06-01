@@ -1,0 +1,58 @@
+{% macro nested_entry(entry, entry_data) -%}
+    {% if entry == "link" %}
+      <a{{ entry_data|xmlattr }}> 
+	{% if entry_data.description is defined %}
+	{{ entry_data.description }}
+	{% else %}
+	{{ entry_data.rel }}
+	{% endif %}
+      </a>
+    {% else %}
+      {% if entry_data is number %}
+      <span class="number">{{ entry_data }}</span>
+      {% elif entry_data is string %}
+      <span class="string">{{ entry_data }}</span> 
+      {% elif entry_data is mapping %} 
+      <dl>
+	{% for key in entry_data %} 
+	  <dt>{{ key }}</dt>
+	  <dd>{{ nested_entry(key, entry_data[key]) }}</dd> 
+	{% else %}
+	  <!-- no data -->
+	  (empty mapping)
+	{% endfor %}
+      </dl>
+      {% elif entry_data is sequence %}
+      <ul>
+	{% for item in entry_data %}
+	<li>{{ nested_entry(loop.index, item) }}</li>
+	{% else %}
+	<!-- no data -->
+	(empty sequence)
+	{% endfor %}
+      </ul>
+      {% else %}
+      <span class="unknown">{{ entry_data }}</span>
+      {% endif %}
+    {% endif %}
+{%- endmacro %}
+
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>foo</title>
+  </head>
+  <body>
+    <div class="data">
+      <dl>
+      {% for entry in data %}
+      <dt>{{ entry }}</dt>
+      <dd>{{ nested_entry(entry, data[entry]) }}</dd>
+      {% else %}
+      <!-- no data -->
+      {% endfor %}
+      </dl>
+    </div>
+  </body>
+</html>
+

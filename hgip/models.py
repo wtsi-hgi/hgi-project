@@ -86,6 +86,8 @@ class Project(Base):
     def __repr__(self):
         return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
 
+    def __str__(self):
+        return "project %s" % (self.name)
     
 
 class Prelim(Base):
@@ -107,6 +109,9 @@ class User(Base):
 
     def __repr__(self):
         return "<User(username='%s', uid='%s', farm_user='%s')>" % (self.username, self.uid, self.farm_user)
+
+    def __str__(self):
+        return "user %s" % (self.username)
 
 
 # Configure SQLAlchemy ORM based on models
