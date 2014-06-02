@@ -49,7 +49,9 @@ errors = {
 
 # configure flask restful
 api = Api(app, default_mediatype=None, catch_all_404s=True, errors=errors)
-
+api.representations = {}
+home_api = Api(app, default_mediatype=None, catch_all_404s=True, errors=errors)
+home_api.representations = {}
 
 def abort_if_project_doesnt_exist(name):
     names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == name)]
@@ -67,13 +69,26 @@ parser.add_argument('gid', type=str)
 
 @api.representation('text/plain')
 @api.representation('application/json')
+@home_api.representation('text/plain')
+@home_api.representation('application/json-home')
 def json_rep(data, status_code, headers=None):
     resp = app.make_response((json.dumps(data), status_code, headers))
     return resp
 
+@home_api.representation('application/xhtml+xml')
+def xhtml_home_rep(data, status_code, headers=None):
+    html = render_template('home.xhtml', data=data, title="API Home")
+    resp = app.make_response((
+            html,
+            status_code,
+            headers,
+            ))
+    return resp
+
+@api.representation('text/html')
 @api.representation('application/xhtml+xml')
 def xhtml_rep(data, status_code, headers=None):
-    html = render_template('./data.xhtml', data=data, title="data")
+    html = render_template('data.xhtml', data=data, title="Data") # TODO it would be nice if the title was Project or User
     resp = app.make_response((
             html,
             status_code,
@@ -289,6 +304,20 @@ class UserList(Resource):
         return user, 201
 
 
+class HomeDocument(Resource):
+    # http://tools.ietf.org/html/draft-nottingham-json-home-03
+    def get(self):
+        data = { 
+            "resources": {
+                "http://hgi.sanger.ac.uk/rel/projects": {
+                    "href": "/projects/"
+                    },
+                "http://hgi.sanger.ac.uk/rel/users": {
+                    "href": "/users/"
+                    },
+                }
+            }
+        return data
 
 ##
 ## Actually setup the Api resource routing here
@@ -300,8 +329,7 @@ api.add_resource(Project, '/projects/<string:name>')
 api.add_resource(UserList, '/users/')
 api.add_resource(User, '/users/<string:username>')
 
-#@app.route('/')
-
+home_api.add_resource(HomeDocument, '/')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

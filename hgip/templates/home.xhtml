@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>{{ title }}</title>
+  </head>
+  <body>
+    <h1>API Resources</h1>
+    <div class="resources">
+      <ul>
+      {% for rel in data.resources %}
+      <li><a href="{{ data.resources[rel].href }}" rel="{{ rel }}">{{ rel }}</a></li>
+      {% else %}
+      (none)
+      {% endfor %}
+      </ul>
+    </div>
+    <div class="footer">
+      <p>Automated clients probably prefer the application/json-home version of this document.</p>
+    </div>
+  </body>
+</html>
+
