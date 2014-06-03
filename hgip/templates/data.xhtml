@@ -1,5 +1,5 @@
 {% macro nested_entry(entry, entry_data) -%}
-    {% if entry == "link" %}
+    {% if entry_data.rel is defined and entry_data.href is defined %}
       <a{{ entry_data|xmlattr }}> 
 	{% if entry_data.description is defined %}
 	{{ entry_data.description }}

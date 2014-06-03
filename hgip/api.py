@@ -144,13 +144,14 @@ class EnumDescription(fields.Raw):
 class RelatedLink(fields.Url):
     def __init__(self, endpoint, rel, **kwargs):
         self.rel = rel
+        self.description = kwargs.pop("description", None)
         super(RelatedLink, self).__init__(endpoint, **kwargs)
 
     def output(self, key, obj):
         return {
             'rel': self.rel, 
             'href': super(RelatedLink, self).output(key, obj),
-            'description': str(obj),
+            'description': self.description or str(obj),
             }
 
 enum_fields = {
@@ -169,7 +170,7 @@ user_core_fields = {
 
 project_fields = project_core_fields.copy()
 project_fields.update({
-        'link': RelatedLink('project', 'self'),
+        'self': RelatedLink('project', 'self'),
         'gid': fields.Integer,
         'sec_level': EnumDescription,
         'owners': fields.Nested({
@@ -182,6 +183,7 @@ project_fields.update({
                 },
                                  attribute='users', 
             ),
+        'collection': RelatedLink('projectlist', 'collection', description='list of projects')
         })
 
 # project_linked_fields = project_core_fields.copy()
@@ -196,7 +198,7 @@ project_fields.update({
 
 user_fields = user_core_fields.copy()
 user_fields.update({
-        'link': RelatedLink('user', 'self'),
+        'self': RelatedLink('user', 'self'),
         'uid': fields.Integer,
         'farm_user': fields.Boolean,
         'memberof_projects': fields.Nested({
@@ -207,6 +209,7 @@ user_fields.update({
                 'name': fields.String,
                 'link': RelatedLink('project', 'x-owner-of')
                 }),
+        'collection': RelatedLink('userlist', 'collection', description='list of users')
         })
 
 project_list_fields = {
