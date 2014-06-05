@@ -233,19 +233,26 @@ class Project(Resource):
         
     def delete(self, name):
         abort_if_project_doesnt_exist(name)
-#        abort(500, message="Delete not implemented.")
-        del db.session.query(m.Project).filter(m.Project.name == name)[0]
+        project = db.session.query(m.Project).filter(m.Project.name == name)[0]
+        db.session.delete(project)
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            raise
         return '', 204
         
     def put(self, name):
         args = parser.parse_args()
-        gid = {'gid': args['gid']}
-        project = models.Project(name=name, gid=gid)
-        session.add(project)
+        #if args['name']
+        #gid = {'gid': args['gid']}
+        gid = args['gid']
+        project = m.Project(name=name, gid=gid)
+        db.session.add(project)
         try:
-            session.commit()
+            db.session.commit()
         except: 
-            session.rollback()
+            db.session.rollback()
             #return '', 500
             raise
         return project, 201
@@ -263,11 +270,11 @@ class ProjectList(Resource):
         args = parser.parse_args()
         name = {'name': args['name']}
         project = models.Project(name=name)
-        session.add(project)
+        db.session.add(project)
         try:
-            session.commit()
+            db.session.commit()
         except: 
-            session.rollback()
+            db.session.rollback()
             #return '', 500
             raise
         return project, 201
@@ -297,11 +304,11 @@ class UserList(Resource):
         args = parser.parse_args()
         name = {'name': args['name']}
         user = models.User(name=name)
-        session.add(user)
+        db.session.add(user)
         try:
-            session.commit()
+            db.session.commit()
         except: 
-            session.rollback()
+            db.session.rollback()
             #return '', 500
             raise
         return user, 201
