@@ -1,0 +1,13 @@
+dl { 
+    display: inline-block;
+    border: 1px solid #000;
+    padding: 2px;
+}
+dt {
+    float: left;
+    margin: 0 3px;
+}
+dt, dd {
+}
+dd {
+}
