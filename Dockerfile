@@ -11,6 +11,6 @@ ADD . /docker
 WORKDIR /docker
 
 # Install Prerequisites
-RUN apt-get install -y libmysqlclient-dev libldap2-dev libsasl2-dev git
+RUN apt-get update && apt-get install -y libmysqlclient-dev libldap2-dev libsasl2-dev git
 RUN pip install -r /docker/requirements.txt
 
