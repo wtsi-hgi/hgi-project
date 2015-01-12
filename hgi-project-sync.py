@@ -45,7 +45,7 @@ def main():
 
     # read configuration from config file
     config = ConfigParser.RawConfigParser()
-    config_files = config.read(['hgi-project-sync.cfg', os.path.expanduser('~/.hgi-project-sync.cfg')])
+    config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
     _log.info('read configuration from %s' % (config_files))
 
     # 
