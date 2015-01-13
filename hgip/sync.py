@@ -21,7 +21,6 @@ import logging
 import ldap
 from ldap import ldapobject, syncrepl
 import time
-import exceptions
 import anydbm
 
 class LDAPSync(ldapobject.LDAPObject, syncrepl.SyncreplConsumer):

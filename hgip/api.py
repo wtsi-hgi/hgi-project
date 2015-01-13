@@ -328,7 +328,8 @@ class HomeDocument(Resource):
                     },
                 }
             }
-        return data
+        headers = {'Link': ['<%s>; rel="%s"' % (value['href'], key) for key, value in data['resources'].iteritems()]}
+        return data, 200, headers
 
 ##
 ## Actually setup the Api resource routing here
