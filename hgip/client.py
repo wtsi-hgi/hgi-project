@@ -19,6 +19,7 @@
 #
 import logging
 import requests
+from urlparse import urljoin
 
 class Client:
 
@@ -62,14 +63,16 @@ class Client:
             self.__log.warning("API home returned unknown content-type %s, cannot parse: %s" % (r.headers['content-type'], r.text))
             # TODO: could try to extract links from other content types?
 
-    def remember_link(self, cur_uri, rel, linked_uri):
-        if cur_uri not in self._links:
-            self._links[cur_uri] = dict()
-        if rel not in self._links[cur_uri]:
-            self._links[cur_uri][rel] = []
+    def remember_link(self, base_url, rel, linked_url):
+        if base_url not in self._links:
+            self._links[base_url] = dict()
+        if rel not in self._links[base_url]:
+            self._links[base_url][rel] = []
 
-        if linked_uri not in self._links[cur_uri][rel]:
-            self._links[cur_uri][rel].append(linked_uri)
+        linked_url_absolute = urljoin(base_url, linked_url)
+
+        if linked_url_absolute not in self._links[base_url][rel]:
+            self._links[base_url][rel].append(linked_url_absolute)
 
     def list_links(self):
         links = []
