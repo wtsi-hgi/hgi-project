@@ -23,7 +23,7 @@ from urlparse import urljoin
 
 class Client:
 
-    def __init__(self, api_home_uri=''):
+    def __init__(self, api_home_url=''):
         self.__log = logging.getLogger(__name__)
         self.__log.debug("Client.__init__")
         # _links is dict of dicts of lists keyed on cur_uri and rel (with list of linked_uris)
@@ -31,14 +31,15 @@ class Client:
         # requests session to persist configuration
         self._s = requests.Session()
         self._s.headers.update({'Accept': 'application/json-home; q=1, application/json; q=0.5, text/html; q=0.3, application/xml; q=0.2, text/xml; q=0.2, text/plain; q=0.1, */*; q=0'})
+        self.get(api_home_url)
 
-        r = self._s.get(api_home_uri)
-        self.__log.debug("Requested %s with headers=%s" % (api_home_uri, str(r.request.headers)))
+    def get(self, url):
+        r = self._s.get(url)
+        self.__log.debug("Requested %s with headers=%s" % (url, str(r.request.headers)))
         if r.status_code != requests.codes.ok:
-            self.__log.error("Response from api_home_uri (%s) not OK: %s" % (api_home_uri, r.status_code))
+            self.__log.error("Response from url (%s) not OK: %s" % (url, r.status_code))
             r.raise_for_status()
-        
-        self.__log.debug("Response OK from api_home_uri (%s): content-type=%s, content-length=%s" % (api_home_uri, r.headers['content-type'], r.headers['content-length']))
+        self.__log.debug("Response OK from url (%s): content-type=%s, content-length=%s" % (url, r.headers['content-type'], r.headers['content-length']))
 
         if r.links:
             self.__log.debug("Response header included links: %s" % (str(r.links)))
@@ -48,7 +49,7 @@ class Client:
                 if 'rel' in r.links[key]:
                     rel = r.links[key]['rel']
                 if linked_url and rel:
-                    self.remember_link(api_home_uri, rel, linked_url)
+                    self.remember_link(url, rel, linked_url)
 
         # parse content appropriately
         if r.headers['content-type'] in ['application/json-home', 'application/json']:
@@ -58,7 +59,7 @@ class Client:
             if 'resources' in self._home_data:
                 for rel, d in self._home_data['resources'].iteritems():
                     if 'href' in d:
-                        self.remember_link(api_home_uri, rel, d['href']) 
+                        self.remember_link(url, rel, d['href']) 
         else:
             self.__log.warning("API home returned unknown content-type %s, cannot parse: %s" % (r.headers['content-type'], r.text))
             # TODO: could try to extract links from other content types?
@@ -83,6 +84,6 @@ class Client:
         return links
 
     def __str__(self):
-        return "hgip.Client with links: \n\t%s" % ("\n\t".join(self.list_links()))
+        return "hgip.Client with links: \n\t%s" % ("\n\t".join(self.list_links()) or "none")
     
 
