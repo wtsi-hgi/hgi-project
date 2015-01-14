@@ -67,7 +67,9 @@ class Client:
             self._links[cur_uri] = dict()
         if rel not in self._links[cur_uri]:
             self._links[cur_uri][rel] = []
-        self._links[cur_uri][rel].append(linked_uri)
+
+        if linked_uri not in self._links[cur_uri][rel]:
+            self._links[cur_uri][rel].append(linked_uri)
 
     def list_links(self):
         links = []
