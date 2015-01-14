@@ -86,9 +86,3 @@ class Client:
         return "hgip.Client with links: \n\t%s" % ("\n\t".join(self.list_links()))
     
 
-def init(api_home_uri = 'http://localhost'):
-    _log = logging.getLogger(__name__)
-
-    _log.debug("init(): ")
-
-    return Client(api_home_uri)

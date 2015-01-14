@@ -23,7 +23,7 @@ import argparse
 import logging
 import ConfigParser
 from hgip import sync
-from hgip import client
+from hgip.client import Client
 #from multiprocessing import Process
 
 #def group_callback(*args):
@@ -49,7 +49,7 @@ def main():
     config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
     _log.info('read configuration from %s' % (config_files))
 
-    cli = client.init(config.get('client', 'api-uri'))
+    cli = Client(config.get('client', 'api-uri'))
     _log.debug("client: %s" % str(cli))
     exit()
     # 
