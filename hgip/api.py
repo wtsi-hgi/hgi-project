@@ -270,7 +270,7 @@ class ProjectList(Resource):
     def post(self):
         args = parser.parse_args()
         name = {'name': args['name']}
-        project = models.Project(name=name)
+        project = m.Project(name=name)
         db.session.add(project)
         try:
             db.session.commit()
@@ -304,7 +304,7 @@ class UserList(Resource):
     def post(self):
         args = parser.parse_args()
         name = {'name': args['name']}
-        user = models.User(name=name)
+        user = m.User(name=name)
         db.session.add(user)
         try:
             db.session.commit()
