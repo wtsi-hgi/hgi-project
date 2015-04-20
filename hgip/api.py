@@ -127,7 +127,13 @@ def xhtml_rep(data, status_code, headers=None):
 
 class EnumDescription(fields.Raw):
     def output(self, key, obj):
-        return getattr(obj,key).description
+        result = getattr(obj, key)
+        if not result:
+            return None
+        description = result.get("description")
+        if not description:
+            return None
+        return result.description
 
 # class RelatedLink(fields.Raw):
 #     def __init__(self, rel, **kwargs):
@@ -344,4 +350,4 @@ api.add_resource(User, '/users/<string:username>')
 home_api.add_resource(HomeDocument, '/')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0') # default port = 5000
