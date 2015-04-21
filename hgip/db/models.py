@@ -75,7 +75,7 @@ class Project(Base):
     __versioned__ = {}
 
     id = sa.Column(sa.Integer, primary_key=True)
-    name = sa.Column(sa.String(16), unique=True, index=True)
+    name = sa.Column(sa.String(16), unique=True, index=True, nullable=False)
     gid = sa.Column(sa.Integer, unique=True, index=True, nullable=True)
     sec_level = sa.Column(DataSecurityLevel.db_type(), nullable=True)
 
@@ -103,7 +103,7 @@ class User(Base):
     __versioned__ = {}
 
     id = sa.Column(sa.Integer, primary_key=True)
-    username = sa.Column(sa.String(16), unique=True, index=True)
+    username = sa.Column(sa.String(16), unique=True, index=True, nullable=False)
     uid = sa.Column(sa.Integer, unique=True, index=True)
     farm_user = sa.Column(sa.Boolean())
 
