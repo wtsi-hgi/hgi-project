@@ -17,18 +17,16 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 #
-import os
 import ConfigParser
 import os
+import json
 
 from flask import Flask, render_template
 from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
-
-import json
-from xml.sax.saxutils import escape
-
-import models as m
 from flask.ext.sqlalchemy import SQLAlchemy
+from db import models as m
+from db import data_access
+
 
 app = Flask(__name__)
 
@@ -61,6 +59,7 @@ def abort_if_project_doesnt_exist(name):
 
 def abort_if_user_doesnt_exist(username):
     usernames = [p.username for p in db.session.query(m.User).filter(m.User.username == username)]
+    print "USERNAMES RETURNED from abort_if_user_not_exist: " + str(usernames)
     if username not in usernames:
         abort(404, message="User {0} doesn't exist.".format(username))
 
@@ -234,25 +233,19 @@ user_list_fields = {
 class Project(Resource):
     @marshal_with(project_fields)
     def get(self, name):
-        abort_if_project_doesnt_exist(name)
-        proj = db.session.query(m.Project).filter(m.Project.name == name)[0]
-        return proj
-        
+        return data_access.ProjectDataAccess.get_project(db, name)
+
     def delete(self, name):
         abort_if_project_doesnt_exist(name)
-        project = db.session.query(m.Project).filter(m.Project.name == name)[0]
-        db.session.delete(project)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            raise
-        return '', 204
+        project = data_access.ProjectDataAccess.get_project(db, name)
+        if project:
+            data_access.ProjectDataAccess.delete_project(db, project)
+            return '', 204
+        return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
         
     def put(self, name):
         args = parser.parse_args()
-        #if args['name']
-        #gid = {'gid': args['gid']}
+        # Here you assume that the gid is the only thing that can be changed...
         gid = args['gid']
         project = m.Project(name=name, gid=gid)
         db.session.add(project)
@@ -270,29 +263,22 @@ class Project(Resource):
 class ProjectList(Resource):
     @marshal_with(project_list_fields)
     def get(self):
-        projects = db.session.query(m.Project).all()
-        return projects
+        return data_access.ProjectDataAccess.get_all(db)
 
     def post(self):
         args = parser.parse_args()
-        name = {'name': args['name']}
-        project = m.Project(name=name)
-        db.session.add(project)
-        try:
-            db.session.commit()
-        except: 
-            db.session.rollback()
-            #return '', 500
-            raise
+        project = m.Project(name=args.get('name'))
+        data_access.ProjectDataAccess.add_project(db, project)
         return project, 201
 
 class User(Resource):
     @marshal_with(user_fields)
     def get(self, username):
-        abort_if_user_doesnt_exist(username)
-        user = db.session.query(m.User).filter(m.User.username == username)[0]
+        user = data_access.UserDataAccess.get_user(db, username)
+        if not user:
+            abort(404, message="User {0} doesn't exist.".format(username))
         return user
-        
+
     def delete(self, name):
         abort_if_project_doesnt_exist(name)
         abort(500, message="Delete not implemented.")
@@ -304,20 +290,16 @@ class User(Resource):
 class UserList(Resource):
     @marshal_with(user_list_fields)
     def get(self):
-        users = db.session.query(m.User).all()
-        return users
+        return data_access.UserDataAccess.get_all(db)
 
+    # TODO: here -- to be discussed. This POST assumes that a new user is always given only by username and only that.
+    # TODO: This depends on whether someone can add users through this interface,
+    # TODO or the users are being added in LDAP first, and hgi-project-DB is updated acordingly
+    @marshal_with(user_fields)
     def post(self):
         args = parser.parse_args()
-        name = {'name': args['name']}
-        user = m.User(name=name)
-        db.session.add(user)
-        try:
-            db.session.commit()
-        except: 
-            db.session.rollback()
-            #return '', 500
-            raise
+        user = m.User(username=args.get('username'))
+        data_access.UserDataAccess.add_user(db, user)
         return user, 201
 
 
