@@ -233,10 +233,12 @@ user_list_fields = {
 class Project(Resource):
     @marshal_with(project_fields)
     def get(self, name):
-        return data_access.ProjectDataAccess.get_project(db, name)
+        project = data_access.ProjectDataAccess.get_project(db, name)
+        if not project:
+            abort(404, message="Project {0} doesn't exist.".format(name))
+        return project
 
     def delete(self, name):
-        abort_if_project_doesnt_exist(name)
         project = data_access.ProjectDataAccess.get_project(db, name)
         if project:
             data_access.ProjectDataAccess.delete_project(db, project)
@@ -279,11 +281,14 @@ class User(Resource):
             abort(404, message="User {0} doesn't exist.".format(username))
         return user
 
-    def delete(self, name):
-        abort_if_project_doesnt_exist(name)
-        abort(500, message="Delete not implemented.")
-        
-    def put(self, name):
+    def delete(self, username):
+        user = data_access.UserDataAccess.get_user(db, username)
+        if user:
+            data_access.UserDataAccess.delete_user(db, user)
+            return '', 204
+        return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
+
+    def put(self, username):
         args = parser.parse_args()
         abort(500, message="Put not implemented.")
 
