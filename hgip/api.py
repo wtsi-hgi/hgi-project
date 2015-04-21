@@ -1,6 +1,7 @@
-# Copyright (c) 2014 Genome Research Ltd.
+# Copyright (c) 2014, 2015 Genome Research Ltd.
 #
 # Author: Joshua C. Randall <jcrandall@alum.mit.edu>
+#         Christopher Harrison <ch12@sanger.ac.uk>
 #
 # This file is part of HGIP
 #
