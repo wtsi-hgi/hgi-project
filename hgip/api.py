@@ -20,13 +20,15 @@
 import ConfigParser
 import os
 import json
+from functools import wraps
 
-from flask import Flask, render_template
+from flask import Flask, request, render_template
 from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
 from flask.ext.sqlalchemy import SQLAlchemy
 from db import models as m
 from db import data_access
 
+from xiongxiong import Xiongxiong
 
 app = Flask(__name__)
 
@@ -37,6 +39,16 @@ config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-p
 # configure flask sqlalchemy
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
 db = SQLAlchemy(app)
+
+# Configure and instantiate token decoder
+app.config['TOKEN_KEY_FILE'] = config.get('token', 'secret_key')
+if config.has_option('token', 'algorithm'):
+  app.config['TOKEN_ALGORITHM'] = config.get('token', 'algorithm')
+else:
+  app.config['TOKEN_ALGORITHM'] = 'sha1'
+
+with open(app.config['TOKEN_KEY_FILE'], 'rb') as keyFile:
+  xiongxiong = Xiongxiong(keyFile.read(), app.config['TOKEN_ALGORITHM'])
 
 # setup custom error messages
 errors = {
@@ -228,9 +240,48 @@ user_list_fields = {
     'link': RelatedLink('user', 'self'),
 }
 
+# Token authentication decorator
+def authenticateToken(f):
+  @wraps(f)
+  def _(*args, **kwargs):
+    try:
+      # Unpack Authorization request header
+      method, payload = request.headers['Authorization'].split()
+      method = method.lower()
+
+      # Decode the authorisation payload
+      if method == 'bearer':
+        # Decode bearer token
+        token = xiongxiong(payload)
+
+      elif method == 'basic':
+        # Decode basic auth pair
+        token = xiongxiong(request.authorization.username.strip(),
+                           request.authorization.password.strip())
+
+      else:
+        raise Exception
+
+      # Are we good to go?
+      if token.valid:
+        return f(*args, **kwargs)
+      else:
+        raise Exception
+
+    except:
+      # Unauthorised
+      abort(401, message = 'Unauthorised: Cannot authenticate')
+
+  return _
+
+# Subclass Resource with the authentication decorator such that it
+# applies to all requests
+class AuthenticatedResource(Resource):
+  method_decorators = [authenticateToken]
+
 # Project
 #   show a single project item and lets you delete them
-class Project(Resource):
+class Project(AuthenticatedResource):
     @marshal_with(project_fields)
     def get(self, name):
         project = data_access.ProjectDataAccess.get_project(db, name)
@@ -260,9 +311,11 @@ class Project(Resource):
         return project, 201
 
 
+
+
 # ProjectList
 #   shows a list of all projects, and lets you POST to add new project
-class ProjectList(Resource):
+class ProjectList(AuthenticatedResource):
     @marshal_with(project_list_fields)
     def get(self):
         return data_access.ProjectDataAccess.get_all(db)
@@ -273,7 +326,7 @@ class ProjectList(Resource):
         data_access.ProjectDataAccess.add_project(db, project)
         return project, 201
 
-class User(Resource):
+class User(AuthenticatedResource):
     @marshal_with(user_fields)
     def get(self, username):
         user = data_access.UserDataAccess.get_user(db, username)
@@ -292,7 +345,7 @@ class User(Resource):
         args = parser.parse_args()
         abort(500, message="Put not implemented.")
 
-class UserList(Resource):
+class UserList(AuthenticatedResource):
     @marshal_with(user_list_fields)
     def get(self):
         return data_access.UserDataAccess.get_all(db)
@@ -308,7 +361,7 @@ class UserList(Resource):
         return user, 201
 
 
-class HomeDocument(Resource):
+class HomeDocument(AuthenticatedResource):
     # http://tools.ietf.org/html/draft-nottingham-json-home-03
     def get(self):
         data = { 
