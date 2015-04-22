@@ -275,7 +275,7 @@ def authenticateToken(f):
 
       # Are we good to go?
       if token.valid:
-        return f(*args, **kwargs)
+        return f(token = token, *args, **kwargs)
       else:
         raise AuthError('Invalid token')
 
@@ -294,20 +294,20 @@ class AuthenticatedResource(Resource):
 #   show a single project item and lets you delete them
 class Project(AuthenticatedResource):
     @marshal_with(project_fields)
-    def get(self, name):
+    def get(self, name, token):
         project = data_access.ProjectDataAccess.get_project(db, name)
         if not project:
             abort(404, message="Project {0} doesn't exist.".format(name))
         return project
 
-    def delete(self, name):
+    def delete(self, name, token):
         project = data_access.ProjectDataAccess.get_project(db, name)
         if project:
             data_access.ProjectDataAccess.delete_project(db, project)
             return '', 204
         return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
         
-    def put(self, name):
+    def put(self, name, token):
         args = parser.parse_args()
         # Here you assume that the gid is the only thing that can be changed...
         gid = args['gid']
@@ -328,10 +328,10 @@ class Project(AuthenticatedResource):
 #   shows a list of all projects, and lets you POST to add new project
 class ProjectList(AuthenticatedResource):
     @marshal_with(project_list_fields)
-    def get(self):
+    def get(self, token):
         return data_access.ProjectDataAccess.get_all(db)
 
-    def post(self):
+    def post(self, token):
         args = parser.parse_args()
         project = m.Project(name=args.get('name'))
         data_access.ProjectDataAccess.add_project(db, project)
@@ -339,33 +339,33 @@ class ProjectList(AuthenticatedResource):
 
 class User(AuthenticatedResource):
     @marshal_with(user_fields)
-    def get(self, username):
+    def get(self, username, token):
         user = data_access.UserDataAccess.get_user(db, username)
         if not user:
             abort(404, message="User {0} doesn't exist.".format(username))
         return user
 
-    def delete(self, username):
+    def delete(self, username, token):
         user = data_access.UserDataAccess.get_user(db, username)
         if user:
             data_access.UserDataAccess.delete_user(db, user)
             return '', 204
         return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
 
-    def put(self, username):
+    def put(self, username, token):
         args = parser.parse_args()
         abort(500, message="Put not implemented.")
 
 class UserList(AuthenticatedResource):
     @marshal_with(user_list_fields)
-    def get(self):
+    def get(self, token):
         return data_access.UserDataAccess.get_all(db)
 
     # TODO: here -- to be discussed. This POST assumes that a new user is always given only by username and only that.
     # TODO: This depends on whether someone can add users through this interface,
     # TODO or the users are being added in LDAP first, and hgi-project-DB is updated acordingly
     @marshal_with(user_fields)
-    def post(self):
+    def post(self, token):
         args = parser.parse_args()
         user = m.User(username=args.get('username'))
         data_access.UserDataAccess.add_user(db, user)
@@ -374,7 +374,7 @@ class UserList(AuthenticatedResource):
 
 class HomeDocument(AuthenticatedResource):
     # http://tools.ietf.org/html/draft-nottingham-json-home-03
-    def get(self):
+    def get(self, token):
         data = { 
             "resources": {
                 "http://hgi.sanger.ac.uk/rel/projects": {
