@@ -241,14 +241,21 @@ user_list_fields = {
     'link': RelatedLink('user', 'self'),
 }
 
+# Authentication exception
+class AuthError(Exception):
+  pass
+
 # Token authentication decorator
 def authenticateToken(f):
   @wraps(f)
   def _(*args, **kwargs):
     try:
-      # Unpack Authorization request header
-      method, payload = request.headers['Authorization'].split()
-      method = method.lower()
+      try:
+        # Unpack Authorization request header
+        method, payload = request.headers['Authorization'].split()
+        method = method.lower()
+      except (KeyError, ValueError):
+        raise AuthError('No valid authorisation data found')
 
       # Decode the authorisation payload
       if method == 'bearer':
@@ -256,22 +263,25 @@ def authenticateToken(f):
         token = xiongxiong(payload)
 
       elif method == 'basic':
-        # Decode basic auth pair
-        token = xiongxiong(request.authorization.username.strip(),
-                           request.authorization.password.strip())
+        try:
+          # Decode basic auth pair
+          token = xiongxiong(request.authorization.username.strip(),
+                             request.authorization.password.strip())
+        except AttributeError:
+          raise AuthError('Invalid basic authorisation pair')
 
       else:
-        raise Exception
+        raise AuthError('Invalid authorisation method')
 
       # Are we good to go?
       if token.valid:
         return f(*args, **kwargs)
       else:
-        raise Exception
+        raise AuthError('Invalid token')
 
-    except:
+    except AuthError as e:
       # Unauthorised
-      abort(401, message = 'Unauthorised: Cannot authenticate')
+      abort(401, message = 'Unauthorised: %s' % e)
 
   return _
 
