@@ -21,7 +21,56 @@ import logging
 import requests
 from urlparse import urljoin
 
-class RestClient:
+class RelLink:
+    def __init__(self, base_url, rel, linked_url):
+        self.base_url = base_url
+        self.rel = rel
+        self.linked_url = linked_url
+
+class RelLinksMixin: 
+    def __init__(self):
+        # _links is dict of dicts of lists keyed on cur_uri and rel (with list of linked_uris)
+        self._links = dict()
+
+    def remember_link(self, base_url, rel, linked_url):
+        if base_url not in self._links:
+            self._links[base_url] = dict()
+        if rel not in self._links[base_url]:
+            self._links[base_url][rel] = []
+
+        linked_url_absolute = urljoin(base_url, linked_url)
+
+        if linked_url_absolute not in self._links[base_url][rel]:
+            self._links[base_url][rel].append(linked_url_absolute)
+
+    def list_links(self):
+        for cur_uri, d in self._links.iteritems():
+            for rel, l in d.iteritems():
+
+    def list_links(self, base_url):
+        if base_url not in self._links:
+            return None 
+        links = []
+        for rel, l in self._links[base_url].iteritems():
+                for linked_uri in l:
+                    links.append("%s --(%s)--> %s" % (cur_uri, rel, linked_uri))
+        return links
+            
+        return self._links[base_url][rel]
+
+    def list_links(self, base_url, rel):
+        if base_url not in self._links:
+            return None
+        if rel not in self._links[base_url]:
+            return None
+        return self._links[base_url][rel]
+
+    def __str__(self):
+        return "%s with links: \n\t%s" % (__name__, "\n\t".join(self.list_links()) or "none")
+
+       
+
+class RestClient(RelLinksMixin):
 
     def __init__(self, relations={}):
         self.__log = logging.getLogger(__name__)
@@ -40,8 +89,6 @@ class RestClient:
             self.__log.warning("Using default link relation for projects: %s" % default_link_rel_projects)
 
 
-        # _links is dict of dicts of lists keyed on cur_uri and rel (with list of linked_uris)
-        self._links = dict()
         # requests session to persist configuration
         self._s = requests.Session()
 
@@ -105,25 +152,7 @@ class RestClient:
         else:
             self.__log.warning("No handler registered for content-type %s (have handlers for: %s)" % (content_type, str(self._content_handlers)))
 
-    def remember_link(self, base_url, rel, linked_url):
-        if base_url not in self._links:
-            self._links[base_url] = dict()
-        if rel not in self._links[base_url]:
-            self._links[base_url][rel] = []
-
-        linked_url_absolute = urljoin(base_url, linked_url)
-
-        if linked_url_absolute not in self._links[base_url][rel]:
-            self._links[base_url][rel].append(linked_url_absolute)
-
-    def list_links(self):
-        links = []
-        for cur_uri, d in self._links.iteritems():
-            for rel, l in d.iteritems():
-                for linked_uri in l:
-                    links.append("%s --(%s)--> %s" % (cur_uri, rel, linked_uri))
-        return links
-
+ 
     def handle_content_type(self, content_type, qvalue):
         """Clients must implement content handlers and decorate them using this method.
         
@@ -168,9 +197,6 @@ class RestClient:
                 func(*args, **kwargs)
             return wrapper
         return decorator
-
-    def __str__(self):
-        return "%s with links: \n\t%s" % (__name__, "\n\t".join(self.list_links()) or "none")
 
 
 

@@ -48,6 +48,9 @@ class ProjectClient:
         # Fetch and handle the API Home URL
         self._rc.get(api_home_url)
 
+    @property
+    def projects(self):
+        self._rc.
 
     def __str__(self):
         return "%s with RestClient: %s" % (__name__, str(self._rc))
