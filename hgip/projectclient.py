@@ -20,8 +20,6 @@
 import logging
 from restclient import RestClient
 
-default_link_rel_users = "http://hgi.sanger.ac.uk/rel/users"
-default_link_rel_projects = "http://hgi.sanger.ac.uk/rel/projects"
 
 
 class ProjectClient:

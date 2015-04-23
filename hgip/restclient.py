@@ -21,6 +21,10 @@ import logging
 import requests
 from urlparse import urljoin
 
+default_link_rel_users = "http://hgi.sanger.ac.uk/rel/users"
+default_link_rel_projects = "http://hgi.sanger.ac.uk/rel/projects"
+
+
 class RestClient:
 
     def __init__(self, relations={}):
@@ -43,7 +47,7 @@ class RestClient:
         # _links is dict of dicts of lists keyed on cur_uri and rel (with list of linked_uris)
         self._links = dict()
         # requests session to persist configuration
-        self._s = requests.Session()
+        self._session = requests.Session()
 
     @property
     def accept(self):
@@ -63,9 +67,9 @@ class RestClient:
 
     def get(self, url):
         # Build accept header from _content_handlers
-        self._s.headers.update({'Accept': self.accept})
+        self._session.headers.update({'Accept': self.accept})
 
-        r = self._s.get(url)
+        r = self._session.get(url)
         self.__log.debug("Requested %s with headers=%s" % (url, str(r.request.headers)))
         if r.status_code != requests.codes.ok:
             self.__log.error("Response from url (%s) not OK: %s" % (r.url, r.status_code))
