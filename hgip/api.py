@@ -17,18 +17,16 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 #
-import os
 import ConfigParser
 import os
+import json
 
 from flask import Flask, render_template
 from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
-
-import json
-from xml.sax.saxutils import escape
-
-import models as m
 from flask.ext.sqlalchemy import SQLAlchemy
+from db import models as m
+from db import data_access
+
 
 app = Flask(__name__)
 
@@ -54,18 +52,19 @@ api.representations = {}
 home_api = Api(app, default_mediatype=None, catch_all_404s=True, errors=errors)
 home_api.representations = {}
 
-def abort_if_project_doesnt_exist(name):
-    names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == name)]
-    if name not in names:
-        abort(404, message="Project {0} doesn't exist.".format(name))
+# def abort_if_project_doesnt_exist(name):
+#     names = [p.name for p in db.session.query(m.Project).filter(m.Project.name == name)]
+#     if name not in names:
+#         abort(404, message="Project {0} doesn't exist.".format(name))
+#
+# def abort_if_user_doesnt_exist(username):
+#     usernames = [p.username for p in db.session.query(m.User).filter(m.User.username == username)]
+#     print "USERNAMES RETURNED from abort_if_user_not_exist: " + str(usernames)
+#     if username not in usernames:
+#         abort(404, message="User {0} doesn't exist.".format(username))
 
-def abort_if_user_doesnt_exist(username):
-    usernames = [p.username for p in db.session.query(m.User).filter(m.User.username == username)]
-    if username not in usernames:
-        abort(404, message="User {0} doesn't exist.".format(username))
-
-parser = reqparse.RequestParser()
-parser.add_argument('gid', type=str)
+# parser = reqparse.RequestParser()
+# parser.add_argument('gid', type=str)
 
 
 @api.representation('text/plain')
@@ -127,7 +126,15 @@ def xhtml_rep(data, status_code, headers=None):
 
 class EnumDescription(fields.Raw):
     def output(self, key, obj):
-        return getattr(obj,key).description
+        result = getattr(obj, key)
+        # if not result:
+        #     return None
+        # description = result.get("description")
+        # if not description:
+        #     return None
+        # return result.description
+        return result
+
 
 # class RelatedLink(fields.Raw):
 #     def __init__(self, rel, **kwargs):
@@ -226,37 +233,41 @@ user_list_fields = {
 # Project
 #   show a single project item and lets you delete them
 class Project(Resource):
+
     @marshal_with(project_fields)
     def get(self, name):
-        abort_if_project_doesnt_exist(name)
-        proj = db.session.query(m.Project).filter(m.Project.name == name)[0]
-        return proj
-        
+        project = data_access.ProjectDataAccess.get_project(db, name)
+        if not project:
+            abort(404, message="Project {0} doesn't exist.".format(name))
+        return project
+
     def delete(self, name):
-        abort_if_project_doesnt_exist(name)
-        project = db.session.query(m.Project).filter(m.Project.name == name)[0]
-        db.session.delete(project)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            raise
-        return '', 204
+        project = data_access.ProjectDataAccess.get_project(db, name)
+        if project:
+            data_access.ProjectDataAccess.delete_project(db, project)
+            return '', 204
+        return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
         
     def put(self, name):
+        # parsing arguments from the request:
+        parser = reqparse.RequestParser()
+        parser.add_argument('gid', type=int)
+        parser.add_argument('sec_level', type=str, default="2-Standard")
         args = parser.parse_args()
-        #if args['name']
-        #gid = {'gid': args['gid']}
-        gid = args['gid']
-        project = m.Project(name=name, gid=gid)
-        db.session.add(project)
-        try:
-            db.session.commit()
-        except: 
-            db.session.rollback()
-            #return '', 500
-            raise
-        return project, 201
+
+        # Here you assume that the gid is the only thing that can be changed...
+        print "IN PUT....received data: " + str(args)
+        # project = m.Project(name=name, gid=args.get('gid'), sec_level=args.get('sec_level'))
+        # print "IN PUT ---- project created: " + str(project)
+        # db.session.add(project)
+        # try:
+        #     db.session.commit()
+        # except:
+        #     db.session.rollback()
+        #     #return '', 500
+        #     raise
+        # return project, 201
+        return '', 201
 
 
 # ProjectList
@@ -264,54 +275,64 @@ class Project(Resource):
 class ProjectList(Resource):
     @marshal_with(project_list_fields)
     def get(self):
-        projects = db.session.query(m.Project).all()
-        return projects
+        return data_access.ProjectDataAccess.get_all(db)
 
+    @marshal_with(project_fields)
     def post(self):
+        # Getting args from the request:
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, required=True)
+        parser.add_argument('gid', type=int, required=True)
+        #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to save to DB
         args = parser.parse_args()
-        name = {'name': args['name']}
-        project = models.Project(name=name)
-        db.session.add(project)
-        try:
-            db.session.commit()
-        except: 
-            db.session.rollback()
-            #return '', 500
-            raise
+
+        # Adding a new project:
+        project = m.Project(name=args.get('name'), gid=args.get('gid'), sec_level=args.get('sec_level'))
+        data_access.ProjectDataAccess.add_project(db, project)
         return project, 201
 
 class User(Resource):
     @marshal_with(user_fields)
     def get(self, username):
-        abort_if_user_doesnt_exist(username)
-        user = db.session.query(m.User).filter(m.User.username == username)[0]
+        user = data_access.UserDataAccess.get_user(db, username)
+        if not user:
+            abort(404, message="User {0} doesn't exist.".format(username))
         return user
-        
-    def delete(self, name):
-        abort_if_project_doesnt_exist(name)
-        abort(500, message="Delete not implemented.")
-        
-    def put(self, name):
+
+    def delete(self, username):
+        user = data_access.UserDataAccess.get_user(db, username)
+        if user:
+            data_access.UserDataAccess.delete_user(db, user)
+            return '', 204
+        return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
+
+    def put(self, username):
+        parser = reqparse.RequestParser()
+        parser.add_argument('uid', type=int)
+        parser.add_argument('farm_user', type=bool)
         args = parser.parse_args()
+
+        print "IN PUT on user url, data received: " + str(args)
         abort(500, message="Put not implemented.")
 
 class UserList(Resource):
     @marshal_with(user_list_fields)
     def get(self):
-        users = db.session.query(m.User).all()
-        return users
+        return data_access.UserDataAccess.get_all(db)
 
+    # TODO: here -- to be discussed. This POST assumes that a new user is always given only by username and only that.
+    # TODO: This depends on whether someone can add users through this interface,
+    # TODO or the users are being added in LDAP first, and hgi-project-DB is updated acordingly
+    @marshal_with(user_fields)
     def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('username', type=str, required=True)
+        parser.add_argument('uid', type=int, required=True)
+        parser.add_argument('farm_user', type=bool)
         args = parser.parse_args()
-        name = {'name': args['name']}
-        user = models.User(name=name)
-        db.session.add(user)
-        try:
-            db.session.commit()
-        except: 
-            db.session.rollback()
-            #return '', 500
-            raise
+
+        user = m.User(username=args.get('username'))
+        data_access.UserDataAccess.add_user(db, user)
         return user, 201
 
 
@@ -344,4 +365,4 @@ api.add_resource(User, '/users/<string:username>')
 home_api.add_resource(HomeDocument, '/')
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0') # default port = 5000
