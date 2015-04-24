@@ -24,10 +24,12 @@ import os
 import argparse
 import logging
 import ConfigParser
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from hgip import models
+from hgip.db import models
+
 
 def main():
     # parse command-line arguments

@@ -24,8 +24,11 @@ import os
 import argparse
 import logging
 import ConfigParser
+
 from sqlalchemy import create_engine
-from hgip import models
+
+from hgip.db import models
+
 
 def main():
     # parse command-line arguments
@@ -60,7 +63,7 @@ def main():
         models.Base.metadata.drop_all(engine)
     
     # initialize db
-    models.Base.metadata.create_all(engine)
+   # models.Base.metadata.create_all(engine)
 
     sys.exit(0)
 
