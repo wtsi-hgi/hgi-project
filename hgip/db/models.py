@@ -87,7 +87,7 @@ class Project(Base):
         return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
 
     def __str__(self):
-        return "project %s" % (self.name)
+        return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
     
 
 class Prelim(Base):
