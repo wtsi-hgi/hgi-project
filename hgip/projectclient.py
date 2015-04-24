@@ -20,6 +20,8 @@
 import logging
 from restclient import RestClient
 
+default_link_rel_users = "http://hgi.sanger.ac.uk/rel/users"
+default_link_rel_projects = "http://hgi.sanger.ac.uk/rel/projects"
 
 
 class ProjectClient:
@@ -27,6 +29,14 @@ class ProjectClient:
     def __init__(self, api_home_url='', relations={}):
         self.__log = logging.getLogger(__name__)
         self.__log.debug("__init__(api_home_url=%s, relations=%s)" % (api_home_url, str(relations)))
+
+
+        if "users" not in relations:
+            relations["users"] = default_link_rel_users
+            self.__log.warning("Using default link relation for users: %s" % default_link_rel_users)
+        if "projects" not in relations:
+            relations["projects"] = default_link_rel_projects
+            self.__log.warning("Using default link relation for projects: %s" % default_link_rel_projects)
 
         self._rc = RestClient(relations)
 
@@ -46,6 +56,10 @@ class ProjectClient:
         # Fetch and handle the API Home URL
         self._rc.get(api_home_url)
 
+    @property
+    def projects(self):
+        #self._rc.relations["projects"]
+        pass
 
     def __str__(self):
         return "%s with RestClient: %s" % (__name__, str(self._rc))

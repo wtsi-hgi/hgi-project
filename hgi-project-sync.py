@@ -53,8 +53,10 @@ def main():
     _log.info('read configuration from %s' % (config_files))
 
     cli = ProjectClient(api_home_url=config.get('client', 'api-home-url'), relations=dict(config.items('relations')))
-
     _log.debug("client: %s" % str(cli))
+
+    projects = cli.projects()
+    _log.debug("projects: %s" % str(projects))
 
     exit()
     # 
