@@ -41,15 +41,21 @@ config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-p
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
 db = SQLAlchemy(app)
 
-# Configure and instantiate token decoder
-app.config['TOKEN_KEY_FILE'] = config.get('token', 'secret_key')
-if config.has_option('token', 'algorithm'):
-  app.config['TOKEN_ALGORITHM'] = config.get('token', 'algorithm')
+##### DEVELOPMENT CODE: START
+if os.environ.get('DEV'):
+  import sys
+  sys.stderr.write('Development Mode: No authentication required!\n')
 else:
-  app.config['TOKEN_ALGORITHM'] = 'sha1'
+##### DEVELOPMENT CODE: END
+  # Configure and instantiate token decoder
+  app.config['TOKEN_KEY_FILE'] = config.get('token', 'secret_key')
+  if config.has_option('token', 'algorithm'):
+    app.config['TOKEN_ALGORITHM'] = config.get('token', 'algorithm')
+  else:
+    app.config['TOKEN_ALGORITHM'] = 'sha1'
 
-with open(app.config['TOKEN_KEY_FILE'], 'rb') as keyFile:
-  xiongxiong = Xiongxiong(keyFile.read(), app.config['TOKEN_ALGORITHM'])
+  with open(app.config['TOKEN_KEY_FILE'], 'rb') as keyFile:
+    xiongxiong = Xiongxiong(keyFile.read(), app.config['TOKEN_ALGORITHM'])
 
 # setup custom error messages
 errors = {
@@ -247,45 +253,54 @@ user_list_fields = {
 class AuthError(Exception):
   pass
 
-# Token authentication decorator
-def authenticateToken(f):
-  @wraps(f)
-  def _(*args, **kwargs):
-    try:
+##### DEVELOPMENT CODE: START
+if os.environ.get('DEV'):
+  def authenticateToken(f):
+    @wraps(f)
+    def _(*args, **kwargs):
+      return f(token = None, *args, **kwargs)
+    return _
+else:
+##### DEVELOPMENT CODE: END
+  # Token authentication decorator
+  def authenticateToken(f):
+    @wraps(f)
+    def _(*args, **kwargs):
       try:
-        # Unpack Authorization request header
-        method, payload = request.headers['Authorization'].split()
-        method = method.lower()
-      except (KeyError, ValueError):
-        raise AuthError('No valid authorisation data found')
-
-      # Decode the authorisation payload
-      if method == 'bearer':
-        # Decode bearer token
-        token = xiongxiong(payload)
-
-      elif method == 'basic':
         try:
-          # Decode basic auth pair
-          token = xiongxiong(request.authorization.username.strip(),
-                             request.authorization.password.strip())
-        except AttributeError:
-          raise AuthError('Invalid basic authorisation pair')
+          # Unpack Authorization request header
+          method, payload = request.headers['Authorization'].split()
+          method = method.lower()
+        except (KeyError, ValueError):
+          raise AuthError('No valid authorisation data found')
 
-      else:
-        raise AuthError('Invalid authorisation method')
+        # Decode the authorisation payload
+        if method == 'bearer':
+          # Decode bearer token
+          token = xiongxiong(payload)
 
-      # Are we good to go?
-      if token.valid:
-        return f(token = token, *args, **kwargs)
-      else:
-        raise AuthError('Invalid token')
+        elif method == 'basic':
+          try:
+            # Decode basic auth pair
+            token = xiongxiong(request.authorization.username.strip(),
+                               request.authorization.password.strip())
+          except AttributeError:
+            raise AuthError('Invalid basic authorisation pair')
 
-    except AuthError as e:
-      # Unauthorised
-      abort(401, message = 'Unauthorised: %s' % e)
+        else:
+          raise AuthError('Invalid authorisation method')
 
-  return _
+        # Are we good to go?
+        if token.valid:
+          return f(token = token, *args, **kwargs)
+        else:
+          raise AuthError('Invalid token')
+
+      except AuthError as e:
+        # Unauthorised
+        abort(401, message = 'Unauthorised: %s' % e)
+
+    return _
 
 # Subclass Resource with the authentication decorator such that it
 # applies to all requests
