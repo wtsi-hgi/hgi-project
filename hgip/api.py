@@ -21,6 +21,7 @@
 import ConfigParser
 import os
 import json
+import sys
 from functools import wraps
 
 from flask import Flask, request, render_template
@@ -38,16 +39,20 @@ config = ConfigParser.RawConfigParser()
 config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
 
 # configure flask sqlalchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
-db = SQLAlchemy(app)
-
 ##### DEVELOPMENT CODE: START
 if os.environ.get('DEV'):
-  import sys
+  app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db_dev','uri')
+else:
+##### DEVELOPMENT CODE: END
+  app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
+db = SQLAlchemy(app)
+
+# Configure and instantiate token decoder
+##### DEVELOPMENT CODE: START
+if os.environ.get('DEV'):
   sys.stderr.write('Development Mode: No authentication required!\n')
 else:
 ##### DEVELOPMENT CODE: END
-  # Configure and instantiate token decoder
   app.config['TOKEN_KEY_FILE'] = config.get('token', 'secret_key')
   if config.has_option('token', 'algorithm'):
     app.config['TOKEN_ALGORITHM'] = config.get('token', 'algorithm')
@@ -253,6 +258,7 @@ user_list_fields = {
 class AuthError(Exception):
   pass
 
+# Token authentication decorator
 ##### DEVELOPMENT CODE: START
 if os.environ.get('DEV'):
   def authenticateToken(f):
@@ -262,7 +268,6 @@ if os.environ.get('DEV'):
     return _
 else:
 ##### DEVELOPMENT CODE: END
-  # Token authentication decorator
   def authenticateToken(f):
     @wraps(f)
     def _(*args, **kwargs):
