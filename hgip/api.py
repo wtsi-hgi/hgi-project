@@ -97,6 +97,7 @@ home_api.representations = {}
 @home_api.representation('application/json-home')
 def json_rep(data, status_code, headers=None):
     resp = app.make_response((json.dumps(data), status_code, headers))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
 @home_api.representation('application/xhtml+xml')
