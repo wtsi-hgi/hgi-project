@@ -111,18 +111,75 @@ var request = (function() {
   return req;
 })();
 
+// Common UI placeholders
+var nb, ui;
+
 // Navbar view
 var viewNavbar = function(data) {
-  var nb = $('#menu');
-
   Object.keys(data.resources).forEach(function(rel) {
     var nice = rel.replace(/(?:.*\W)?(\w)(\w*)$/, function(x, y, z) { return y.toUpperCase() + z; });
     nb.append('<li><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
   });
 };
 
+var switchNavbar = function(which) {
+  // TODO
+};
+
+// Home view
+var viewHome = function() {
+  ui.empty();
+  ui.append('<h1>HGI Project Administration</h1>');
+  ui.append('<p class="lead">Landing page...</h1>');
+  ui.append('<p>Lorem ipsum dolor sit amet, consectetur adipiscing ' +
+            'elit, sed do eiusmod tempor incididunt ut labore et ' +
+            'dolore magna aliqua. Ut enim ad minim veniam, quis ' +
+            'nostrud exercitation ullamco laboris nisi ut aliquip ex ' +
+            'ea commodo consequat. Duis aute irure dolor in ' +
+            'reprehenderit in voluptate velit esse cillum dolore eu ' +
+            'fugiat nulla pariatur. Excepteur sint occaecat ' +
+            'cupidatat non proident, sunt in culpa qui officia ' +
+            'deserunt mollit anim id est laborum.</p>');
+
+  switchNavbar('home');
+};
+
+// Project collection view
+var viewProjects = function(data) {
+  // TODO
+  ui.empty();
+  switchNavbar('projects');
+};
+
+// Project view
+var viewProject = function(data) {
+  // TODO
+  ui.empty();
+  switchNavbar('projects');
+};
+
+// User collection view
+var viewUsers = function(data) {
+  // TODO
+  ui.empty();
+  switchNavbar('users');
+};
+
+// User view
+var viewUser = function(data) {
+  // TODO
+  ui.empty();
+  switchNavbar('users');
+};
+
+// Routing and HTML5 history
+// TODO
+
 // Let's do this!
 $(document).ready(function() {
-  request('/', viewNavbar);
-});
+  nb = $('#menu'),
+  ui = $('#content');
 
+  request('/', viewNavbar);
+  viewHome();
+});
