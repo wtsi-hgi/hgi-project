@@ -34,6 +34,17 @@ from xiongxiong import Xiongxiong
 
 app = Flask(__name__)
 
+##### DEVELOPMENT CODE: START
+# CORS Allow all the things...Geez, what a PITA!
+@app.after_request
+def CORS(response):
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers.add('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers', '*'))
+  response.headers.add('Access-Control-Allow-Methods', 'HEAD, GET, POST, PUT, DELETE, OPTIONS')
+  response.headers.add('Access-Control-Allow-Credentials', 'true')
+  return response
+##### DEVELOPMENT CODE: END
+
 # read configuration from config file
 config = ConfigParser.RawConfigParser()
 config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
@@ -97,7 +108,6 @@ home_api.representations = {}
 @home_api.representation('application/json-home')
 def json_rep(data, status_code, headers=None):
     resp = app.make_response((json.dumps(data), status_code, headers))
-    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
 @home_api.representation('application/xhtml+xml')
