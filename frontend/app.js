@@ -114,63 +114,65 @@ var request = (function() {
 // Common UI placeholders
 var nb, ui;
 
-// Navbar view
-var viewNavbar = function(data) {
-  Object.keys(data.resources).forEach(function(rel) {
-    var nice = rel.replace(/(?:.*\W)?(\w)(\w*)$/, function(x, y, z) { return y.toUpperCase() + z; });
-    nb.append('<li data-id="' + nice.toLowerCase() + '"><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
-  });
-};
-
 var switchNavbar = function(which) {
   nb.children('li.active').toggleClass('active');
   nb.children('li[data-id=' + which + ']').toggleClass('active');
 };
 
-// Home view
-var viewHome = function() {
-  ui.empty();
-  ui.append('<h1>HGI Project Administration</h1>');
-  ui.append('<p class="lead">Landing page...</h1>');
-  ui.append('<p>Lorem ipsum dolor sit amet, consectetur adipiscing ' +
-            'elit, sed do eiusmod tempor incididunt ut labore et ' +
-            'dolore magna aliqua. Ut enim ad minim veniam, quis ' +
-            'nostrud exercitation ullamco laboris nisi ut aliquip ex ' +
-            'ea commodo consequat. Duis aute irure dolor in ' +
-            'reprehenderit in voluptate velit esse cillum dolore eu ' +
-            'fugiat nulla pariatur. Excepteur sint occaecat ' +
-            'cupidatat non proident, sunt in culpa qui officia ' +
-            'deserunt mollit anim id est laborum.</p>');
+var view = {
+  // Navbar view
+  navbar: function(data) {
+    Object.keys(data.resources).forEach(function(rel) {
+      var nice = rel.replace(/(?:.*\W)?(\w)(\w*)$/, function(x, y, z) { return y.toUpperCase() + z; });
+      nb.append('<li data-id="' + nice.toLowerCase() + '"><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
+    });
+  },
 
-  switchNavbar('home');
-};
+  // Landing page view
+  home: function() {
+    ui.empty();
+    ui.append('<h1>HGI Project Administration</h1>');
+    ui.append('<p class="lead">Landing page...</h1>');
+    ui.append('<p>Lorem ipsum dolor sit amet, consectetur adipiscing ' +
+              'elit, sed do eiusmod tempor incididunt ut labore et ' +
+              'dolore magna aliqua. Ut enim ad minim veniam, quis ' +
+              'nostrud exercitation ullamco laboris nisi ut aliquip ' +
+              'ex ea commodo consequat. Duis aute irure dolor in ' +
+              'reprehenderit in voluptate velit esse cillum dolore ' +
+              'eu fugiat nulla pariatur. Excepteur sint occaecat ' +
+              'cupidatat non proident, sunt in culpa qui officia ' +
+              'deserunt mollit anim id est laborum.</p>');
 
-// Project collection view
-var viewProjects = function(data) {
-  // TODO
-  ui.empty();
-  switchNavbar('projects');
-};
+    switchNavbar('home');
+  },
 
-// Project view
-var viewProject = function(data) {
-  // TODO
-  ui.empty();
-  switchNavbar('projects');
-};
+  // Project collection view
+  projects: function(data) {
+    // TODO
+    ui.empty();
+    switchNavbar('projects');
+  },
 
-// User collection view
-var viewUsers = function(data) {
-  // TODO
-  ui.empty();
-  switchNavbar('users');
-};
+  // Project view
+  project: function(data) {
+    // TODO
+    ui.empty();
+    switchNavbar('projects');
+  },
 
-// User view
-var viewUser = function(data) {
-  // TODO
-  ui.empty();
-  switchNavbar('users');
+  // User collection view
+  users: function(data) {
+    // TODO
+    ui.empty();
+    switchNavbar('users');
+  },
+
+  // User view
+  user: function(data) {
+    // TODO
+    ui.empty();
+    switchNavbar('users');
+  }
 };
 
 // Routing and HTML5 history
@@ -181,6 +183,21 @@ $(document).ready(function() {
   nb = $('#menu'),
   ui = $('#content');
 
-  request('/', viewNavbar);
-  viewHome();
+  // Populate navbar
+  request('/', view.navbar);
+
+  // Navbar click event
+  nb.click(function(e) {
+    // TODO This should just wrap the routing functionality
+    var id = $(e.target).parent().data('id');
+    if (view.hasOwnProperty(id)) {
+      view[id]();
+    } else {
+      view.home();
+    }
+  });
+
+  // Opening page
+  // TODO This should respect the URL fragment
+  view.home();
 });
