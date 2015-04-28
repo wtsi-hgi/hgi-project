@@ -123,8 +123,11 @@ var view = {
   // Navbar view
   navbar: function(data) {
     Object.keys(data.resources).forEach(function(rel) {
-      var nice = rel.replace(/(?:.*\W)?(\w)(\w*)$/, function(x, y, z) { return y.toUpperCase() + z; });
-      nb.append('<li data-id="' + nice.toLowerCase() + '"><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
+      var lcRel = rel.split(/\W/).slice(-1)[0].toLowerCase(),
+          tcRel = lcRel.replace(/^./, function(l) { return l.toUpperCase(); }),
+          href  = data.resources[rel].href;
+
+      nb.append('<li data-id="' + lcRel + '"><a href="#' + href + '">' + tcRel + '</a></li>');
     });
   },
 
