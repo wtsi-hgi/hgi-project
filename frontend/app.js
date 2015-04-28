@@ -118,12 +118,13 @@ var nb, ui;
 var viewNavbar = function(data) {
   Object.keys(data.resources).forEach(function(rel) {
     var nice = rel.replace(/(?:.*\W)?(\w)(\w*)$/, function(x, y, z) { return y.toUpperCase() + z; });
-    nb.append('<li><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
+    nb.append('<li data-id="' + nice.toLowerCase() + '"><a href="#' + data.resources[rel].href + '">' + nice + '</a></li>');
   });
 };
 
 var switchNavbar = function(which) {
-  // TODO
+  nb.children('li.active').toggleClass('active');
+  nb.children('li[data-id=' + which + ']').toggleClass('active');
 };
 
 // Home view
