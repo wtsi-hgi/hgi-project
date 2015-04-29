@@ -121,6 +121,23 @@ var switchNavbar = function(which) {
 
 var routeFromLink = function(e) { route(e.target.hash); };
 
+// Generic view constructor
+var protoview = function(nav, content) {
+  return function(data) {
+    // Empty UI container
+    ui.empty();
+    
+    // Create content
+    content(data);
+
+    // Route all links
+    ui.find('a').click(routeFromLink);
+
+    // Switch navbar
+    switchNavbar(nav);
+  };
+};
+
 var view = {
   // Navbar view
   navbar: function(data) {
@@ -134,12 +151,11 @@ var view = {
   },
 
   // Landing page view
-  home: function(data) {
+  home: protoview('home', function(data) {
     var list = Object.keys(data.resources).map(function(res) {
       return '<li><a href="#' + data.resources[res].href + '" rel="' + res + '">' + res + '</a></li>';
     }).join('');
 
-    ui.empty();
     ui.append('<h1>HGI Project Administration</h1>');
 
     ui.append('<h2>Resources</h2>');
@@ -154,53 +170,38 @@ var view = {
               'eu fugiat nulla pariatur. Excepteur sint occaecat ' +
               'cupidatat non proident, sunt in culpa qui officia ' +
               'deserunt mollit anim id est laborum.</p>');
-
-    // Route all links
-    ui.find('a').click(routeFromLink);
-
-    switchNavbar('home');
-  },
+  }),
 
   // Project collection view
-  projects: function(data) {
+  projects: protoview('projects', function(data) {
     // TODO
-    ui.empty();
     ui.append('<p>Projects</p>');
-    switchNavbar('projects');
-  },
+  }),
 
   // Project view
-  project: function(data) {
+  project: protoview('projects', function(data) {
     // TODO
-    ui.empty();
     ui.append('<p>Project</p>');
-    switchNavbar('projects');
-  },
+  }),
 
   // User collection view
-  users: function(data) {
+  users: protoview('users', function(data) {
     // TODO
-    ui.empty();
     ui.append('<p>Users</p>');
-    switchNavbar('users');
-  },
+  }),
 
   // User view
-  user: function(data) {
+  user: protoview('users', function(data) {
     // TODO
-    ui.empty();
     ui.append('<p>User</p>');
-    switchNavbar('users');
-  },
+  }),
 
   // Unknown data view
-  wtf: function(data) {
-    ui.empty();
+  wtf: protoview('', function(data) {
     ui.append('<h1>Unknown Endpoint</h1>');
     ui.append('<p class="lead">Returned data:</p>');
     ui.append('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
-    switchNavbar();
-  }
+  })
 };
 
 // Routing
