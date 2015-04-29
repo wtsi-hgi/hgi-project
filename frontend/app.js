@@ -130,6 +130,12 @@ var protoview = function(nav, content) {
     // Create content
     content(data);
 
+    // Show data
+    if (data) {
+      ui.append('<h3><button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h3>');
+      ui.append('<div class="collapse" id="collapsedRaw"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>');
+    }
+
     // Route all links
     ui.find('a').click(routeFromLink);
 
