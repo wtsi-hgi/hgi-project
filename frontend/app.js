@@ -119,6 +119,8 @@ var switchNavbar = function(which) {
   nb.children('li[data-id=' + which + ']').toggleClass('active');
 };
 
+var routeFromLink = function(e) { route(e.target.hash); };
+
 var view = {
   // Navbar view
   navbar: function(data) {
@@ -132,10 +134,17 @@ var view = {
   },
 
   // Landing page view
-  home: function() {
+  home: function(data) {
+    var list = Object.keys(data.resources).map(function(res) {
+      return '<li><a href="#' + data.resources[res].href + '" rel="' + res + '">' + res + '</a></li>';
+    }).join('');
+
     ui.empty();
     ui.append('<h1>HGI Project Administration</h1>');
-    ui.append('<p class="lead">Landing page...</h1>');
+
+    ui.append('<h2>Resources</h2>');
+    ui.append('<ul>' + list + '</ul>');
+
     ui.append('<p>Lorem ipsum dolor sit amet, consectetur adipiscing ' +
               'elit, sed do eiusmod tempor incididunt ut labore et ' +
               'dolore magna aliqua. Ut enim ad minim veniam, quis ' +
@@ -146,6 +155,9 @@ var view = {
               'cupidatat non proident, sunt in culpa qui officia ' +
               'deserunt mollit anim id est laborum.</p>');
 
+    // Route all links
+    ui.find('a').click(routeFromLink);
+
     switchNavbar('home');
   },
 
@@ -153,6 +165,7 @@ var view = {
   projects: function(data) {
     // TODO
     ui.empty();
+    ui.append('<p>Projects</p>');
     switchNavbar('projects');
   },
 
@@ -160,6 +173,7 @@ var view = {
   project: function(data) {
     // TODO
     ui.empty();
+    ui.append('<p>Project</p>');
     switchNavbar('projects');
   },
 
@@ -167,6 +181,7 @@ var view = {
   users: function(data) {
     // TODO
     ui.empty();
+    ui.append('<p>Users</p>');
     switchNavbar('users');
   },
 
@@ -174,12 +189,50 @@ var view = {
   user: function(data) {
     // TODO
     ui.empty();
+    ui.append('<p>User</p>');
     switchNavbar('users');
+  },
+
+  // Unknown data view
+  wtf: function(data) {
+    ui.empty();
+    ui.append('<h1>Unknown Endpoint</h1>');
+    ui.append('<p class="lead">Returned data:</p>');
+    ui.append('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+    switchNavbar();
   }
 };
 
-// Routing and HTML5 history
-// TODO
+// Routing
+var route = (function() {
+  // Map routes to views... Not very RESTful, but time is against us!
+  var viewFrom = (function() {
+    var mapping = {
+      "/":               view.home,
+      "/users/":         view.users,
+      "/users/[^/]+":    view.user,
+      "/projects/":      view.projects,
+      "/projects/[^/]+": view.project,
+      ".*":              view.wtf
+    };
+
+    var routes = Object.keys(mapping);
+
+    return function(endpoint) {
+      var id = routes.filter(function(r) {
+        return RegExp('^' + r + '$').test(endpoint);
+      })[0];
+
+      return mapping[id];
+    };
+  })();
+
+  return function(endpoint) {
+    // Remove the initial # character
+    endpoint = endpoint.slice(1);
+    request(endpoint, viewFrom(endpoint));
+  };
+})();
 
 // Let's do this!
 $(document).ready(function() {
@@ -190,17 +243,8 @@ $(document).ready(function() {
   request('/', view.navbar);
 
   // Navbar click event
-  nb.click(function(e) {
-    // TODO This should just wrap the routing functionality
-    var id = $(e.target).parent().data('id');
-    if (view.hasOwnProperty(id)) {
-      view[id]();
-    } else {
-      view.home();
-    }
-  });
+  nb.click(routeFromLink);
 
   // Opening page
-  // TODO This should respect the URL fragment
-  view.home();
+  route(location.hash || '#/');
 });
