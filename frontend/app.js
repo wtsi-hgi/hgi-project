@@ -130,7 +130,7 @@ var protoview = function(nav, content) {
 
     // Show data
     if (data) {
-      ui.append('<h3><button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h3>');
+      ui.append('<h2><button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h2>');
       ui.append('<div class="collapse" id="collapsedRaw"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>');
     }
 
@@ -175,33 +175,108 @@ var view = {
 
   // Project collection view
   projects: protoview('projects', function(data) {
-    // TODO
-    ui.append('<p>Projects</p>');
+    var list = data.map(function(proj) {
+      return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
+    }).join('');
+
+    ui.append('<h1>Projects</h1>');
+    ui.append('<p>' + data.length + ' found</p>');
+    ui.append('<ul>' + list + '</ul>');
   }),
 
   // Project view
   project: protoview('projects', function(data) {
-    // TODO
-    ui.append('<p>Project</p>');
+    // Merge project ownership into membership
+    var list = (function() {
+      var ownerOf = {};
+
+      data.owners.forEach(function(user) {
+        ownerOf[user.username] = user.link.rel;
+      });
+
+      return data.members.map(function(user) {
+        var rel  = [user.link.rel],
+            desc = user.username;
+
+        if (ownerOf.hasOwnProperty(user.username)) {
+          rel.push(ownerOf[user.username]);
+          desc += '</a> (Owner)';
+        } else {
+          desc += '</a>';
+        }
+
+        return '<li><a href="#' + user.link.href + '" rel="' + rel.join() + '">' + desc + '</li>';
+      }).join('');
+    })();
+
+    ui.append('<h1>Project Profile</h1>');
+
+    ui.append('<dl>' +
+              '<dt>Name</dt><dd><a href="#' + data.self.href + '" rel="self">' + data.name + '</a></dd>' +
+              '<dt>Group ID</dt><dd>' + data.gid + '</dd>' +
+              '</dl>');
+
+    if (data.members.length) {
+      ui.append('<h2>Project Users</h2>');
+      ui.append('<p>' + data.members.length + ' users:</p>');
+      ui.append('<ul>' + list + '</ul>');
+    }
   }),
 
   // User collection view
   users: protoview('users', function(data) {
-    // TODO
-    ui.append('<p>Users</p>');
+    var list = data.map(function(user) {
+      return '<li><a href="#' + user.link.href + '" rel="' + user.link.rel+ '">' + user.username + '</a></li>';
+    }).join('');
+
+    ui.append('<h1>Users</h1>');
+    ui.append('<p>' + data.length + ' found</p>');
+    ui.append('<ul>' + list + '</ul>');
   }),
 
   // User view
   user: protoview('users', function(data) {
-    // TODO
-    ui.append('<p>User</p>');
+    // Merge project ownership into membership
+    var list = (function() {
+      var ownerOf = {};
+
+      data.ownerof_projects.forEach(function(proj) {
+        ownerOf[proj.name] = proj.link.rel;
+      });
+
+      return data.memberof_projects.map(function(proj) {
+        var rel  = [proj.link.rel],
+            desc = proj.name;
+
+        if (ownerOf.hasOwnProperty(proj.name)) {
+          rel.push(ownerOf[proj.name]);
+          desc += '</a> (Owner)';
+        } else {
+          desc += '</a>';
+        }
+
+        return '<li><a href="#' + proj.link.href + '" rel="' + rel.join() + '">' + desc + '</li>';
+      }).join('');
+    })();
+
+    ui.append('<h1>User Profile</h1>');
+
+    ui.append('<dl>' +
+              '<dt>Username</dt><dd><a href="#' + data.self.href + '" rel="' + data.self.rel + '">' + data.username + '</a></dd>' +
+              '<dt>User ID</dt><dd>' + data.uid + '</dd>' +
+              '<dt>Farm User</dt><dd>' + (data.farm_user ? 'Yes' : 'No') + '</dd>' +
+              '</dl>');
+
+    if (data.memberof_projects.length) {
+      ui.append('<h2>Project Membership</h2>');
+      ui.append('<p>' + data.memberof_projects.length + ' projects:</p>');
+      ui.append('<ul>' + list + '</ul>');
+    }
   }),
 
   // Unknown data view
   wtf: protoview('', function(data) {
     ui.append('<h1>Unknown Endpoint</h1>');
-    ui.append('<p class="lead">Returned data:</p>');
-    ui.append('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
   })
 };
 
