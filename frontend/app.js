@@ -119,8 +119,6 @@ var switchNavbar = function(which) {
   nb.children('li[data-id=' + which + ']').toggleClass('active');
 };
 
-var routeFromLink = function(e) { route(e.target.hash); };
-
 // Generic view constructor
 var protoview = function(nav, content) {
   return function(data) {
@@ -135,9 +133,6 @@ var protoview = function(nav, content) {
       ui.append('<h3><button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h3>');
       ui.append('<div class="collapse" id="collapsedRaw"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>');
     }
-
-    // Route all links
-    ui.find('a').click(routeFromLink);
 
     // Switch navbar
     switchNavbar(nav);
@@ -249,9 +244,9 @@ $(document).ready(function() {
   // Populate navbar
   request('/', view.navbar);
 
-  // Navbar click event
-  nb.click(routeFromLink);
-
   // Opening page
   route(location.hash || '#/');
+
+  // Route on address change
+  $(window).on('popstate', function() { route(location.hash); });
 });
