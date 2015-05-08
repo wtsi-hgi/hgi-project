@@ -250,28 +250,11 @@ var view = {
 
   // Project view
   project: protoView('projects', function(data) {
-    // Merge project ownership into membership
-    var list = (function() {
-      var ownerOf = {};
-
-      data.owners.forEach(function(user) {
-        ownerOf[user.username] = user.link.rel;
-      });
-
-      return data.members.map(function(user) {
-        var rel  = [user.link.rel],
-            desc = user.username;
-
-        if (ownerOf.hasOwnProperty(user.username)) {
-          rel.push(ownerOf[user.username]);
-          desc += '</a> (Owner)';
-        } else {
-          desc += '</a>';
-        }
-
-        return '<li><a href="#' + user.link.href + '" rel="' + rel.join() + '">' + desc + '</li>';
+    var list = function(users) {
+      return users.map(function(u) {
+        return '<li><a href="#' + u.link.href + '" rel="' + u.link.rel + '">' + u.username + '</a></li>';
       }).join('');
-    })();
+    };
 
     ui.append('<h1>Project Profile</h1>');
 
@@ -280,10 +263,19 @@ var view = {
               '<dt>Group ID</dt><dd>' + data.gid + '</dd>' +
               '</dl>');
 
+    // TODO Refactor
+    if (data.members.length || data.owners.length) {
+      ui.append('<h2>Project Membership</h2>');
+    }
+
     if (data.members.length) {
-      ui.append('<h2>Project Users</h2>');
       ui.append('<p>' + data.members.length + ' users:</p>');
-      ui.append('<ul>' + list + '</ul>');
+      ui.append('<ul>' + list(data.members) + '</ul>');
+    }
+
+    if (data.owners.length) {
+      ui.append('<p>' + data.owners.length + ' owners:</p>');
+      ui.append('<ul>' + list(data.owners) + '</ul>');
     }
 
     // Controller
@@ -381,28 +373,11 @@ var view = {
 
   // User view
   user: protoView('users', function(data) {
-    // Merge project ownership into membership
-    var list = (function() {
-      var ownerOf = {};
-
-      data.ownerof_projects.forEach(function(proj) {
-        ownerOf[proj.name] = proj.link.rel;
-      });
-
-      return data.memberof_projects.map(function(proj) {
-        var rel  = [proj.link.rel],
-            desc = proj.name;
-
-        if (ownerOf.hasOwnProperty(proj.name)) {
-          rel.push(ownerOf[proj.name]);
-          desc += '</a> (Owner)';
-        } else {
-          desc += '</a>';
-        }
-
-        return '<li><a href="#' + proj.link.href + '" rel="' + rel.join() + '">' + desc + '</li>';
+    var list = function(users) {
+      return users.map(function(u) {
+        return '<li><a href="#' + u.link.href + '" rel="' + u.link.rel + '">' + u.name + '</a></li>';
       }).join('');
-    })();
+    };
 
     ui.append('<h1>User Profile</h1>');
 
@@ -412,10 +387,19 @@ var view = {
               '<dt>Farm User</dt><dd>' + (data.farm_user ? 'Yes' : 'No') + '</dd>' +
               '</dl>');
 
-    if (data.memberof_projects.length) {
+    // TODO Refactor
+    if (data.memberof_projects.length || data.ownerof_projects.length) {
       ui.append('<h2>Project Membership</h2>');
-      ui.append('<p>' + data.memberof_projects.length + ' projects:</p>');
-      ui.append('<ul>' + list + '</ul>');
+    }
+
+    if (data.memberof_projects.length) {
+      ui.append('<p>User of ' + data.memberof_projects.length + ' projects:</p>');
+      ui.append('<ul>' + list(data.memberof_projects) + '</ul>');
+    }
+
+    if (data.ownerof_projects.length) {
+      ui.append('<p>Owner of ' + data.ownerof_projects.length + ' projects:</p>');
+      ui.append('<ul>' + list(data.ownerof_projects) + '</ul>');
     }
   }),
 
