@@ -120,32 +120,65 @@ var switchNavbar = function(which) {
 };
 
 // Generic controller constructors
-var protoCtrl = {
-  put: function() {
-    // TODO
-  },
+var protoCtrl = function(url, methods) {
+  var output = {};
+  
+  var resolveURL = function(data) {
+    var tags = url.match(/:[^/]+/g) || [],
+        resolved;
 
-  post: function() {
-    // TODO
-  },
+    tags.forEach(function(t) {
+      resolved = url.replace(new RegExp(t, 'g'), data[t.slice(1)])
+    });
 
-  delete: function() {
-    // TODO
-  }
+    return resolved;
+  };
+
+  var generic = {
+    // Generic PUT method
+    put: function(data) {
+      // TODO
+      //console.log(data);
+      console.log(resolveURL(data));
+    },
+
+    // Generic POST method
+    post: function(data) {
+      // TODO
+    },
+
+    // Generic DELETE method
+    delete: function(data) {
+      var toDelete   = resolveURL(data),
+          collection = resolveURL({name: ''});
+
+      request(toDelete, 'DELETE', function() {
+        location.hash = '#' + collection;
+      })
+    }
+  };
+
+  methods.forEach(function(verb) {
+    if (generic.hasOwnProperty(verb)) {
+      output[verb] = generic[verb];
+    }
+  });
+
+  return output;
 };
 
 var ctrl = {
   // Projects controller
-  projects: function() {},
+  projects: undefined,
 
   // Project controller
-  project: function() {},
+  project: protoCtrl('/projects/:name', ['put', 'delete']),
 
   // Users controller
-  users: function() {},
+  users: undefined,
 
   // User controller
-  user: function() {}
+  user: undefined
 };
 
 // Generic view constructor
@@ -160,7 +193,7 @@ var protoView = function(nav, content) {
 
     // Show data
     if (data) {
-      ui.append('<h2><button class="btn btn-default" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h2>');
+      ui.append('<h2><button class="btn btn-default btn-xs" type="button" data-toggle="collapse" data-target="#collapsedRaw">Toggle Raw Data</button></h2>');
       ui.append('<div class="collapse" id="collapsedRaw"><pre>' + JSON.stringify(data, null, 2) + '</pre></div>');
     }
 
@@ -253,17 +286,40 @@ var view = {
     }
 
     // Controller
-    var ctrlv = '<div class="btn-toolbar"><div class="btn-group">'
-              + '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
-              + 'Add User <span class="caret"></span></button>'
-              + '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="users"></ul></div>'
-              + '<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDelete">Delete this Project</button>'
-              + '</div><div class="modal fade" tabindex="-1" id="confirmDelete" role="dialog">'
-              + '<div class="modal-dialog modal-sm"><div class="modal-content">'
-              + '<div class="modal-header"><h4 class="modal-title">L\'Appel du Vide</h4></div>'
-              + '<div class="modal-body">Are you sure you want to delete this project? This operation cannot be undone.</div>'
-              + '<div class="modal-footer"><button type="button" class="btn btn-danger" data-dismiss="modal" data-action="delete-project">I Regret Nothing!</button></div>'
-              + '</div></div></div>';
+    var ctrlv = 
+      '<div class="btn-toolbar">'
+    +   '<div class="btn-group">'
+    +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
+    +       'Add User <span class="caret"></span>'
+    +     '</button>'
+    +     '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="users"></ul>'
+    +   '</div>'
+    +   '<div class="btn-group">'
+    +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
+    +       'Remove User <span class="caret"></span>'
+    +     '</button>'
+    +     '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="kill"></ul>'
+    +   '</div>'
+    +   '<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDelete">'
+    +     'Delete this Project'
+    +   '</button>'
+    + '</div>'
+    + '<div class="modal fade" tabindex="-1" id="confirmDelete" role="dialog">'
+    +   '<div class="modal-dialog modal-sm">'
+    +     '<div class="modal-content">'
+    +       '<div class="modal-header"><h4 class="modal-title">L\'Appel du Vide</h4></div>'
+    +       '<div class="modal-body">'
+    +         'Are you sure you want to delete this project? This operation'
+    +         'cannot be undone.'
+    +       '</div>'
+    +       '<div class="modal-footer">'
+    +         '<button type="button" class="btn btn-danger" data-dismiss="modal" data-action="delete-project">'
+    +           'I Regret Nothing!'
+    +         '</button>'
+    +       '</div>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>';
   
     ui.append(ctrlv);
 
@@ -272,7 +328,7 @@ var view = {
       var dropdown = ui.find('ul[data-list=users]');
 
       dropdown.append(data.map(function(user) {
-        return '<li><a data-action="add-user">' + user.username + '</a></li>';
+        return '<li><a data-action="add-user" data-user=\'' + JSON.stringify(user) + '\'>' + user.username + '</a></li>';
       }).join(''));
     });
 
@@ -283,13 +339,19 @@ var view = {
 
       switch (action) {
         case 'add-user':
-          // TODO
-          console.log(widget.text());
+          // TODO Check for duplicates
+          var newUser = widget.data('user');
+          newUser.link.rel = 'x-member';
+          data.members.push(newUser);
+          ctrl.project.put(data);
+          break;
+
+        case 'delete-user':
+          console.log('foo');
           break;
 
         case 'delete-project':
-          // TODO
-          console.log('delete');
+          ctrl.project.delete(data);
           break;
       }
     });
