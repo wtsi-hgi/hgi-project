@@ -257,8 +257,13 @@ var view = {
               + '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
               + 'Add User <span class="caret"></span></button>'
               + '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="users"></ul></div>'
-              + '<button type="button" class="btn btn-danger" data-action="delete-project">Delete this Project</button>'
-              + '</div>';
+              + '<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDelete">Delete this Project</button>'
+              + '</div><div class="modal fade" tabindex="-1" id="confirmDelete" role="dialog">'
+              + '<div class="modal-dialog modal-sm"><div class="modal-content">'
+              + '<div class="modal-header"><h4 class="modal-title">L\'Appel du Vide</h4></div>'
+              + '<div class="modal-body">Are you sure you want to delete this project? This operation cannot be undone.</div>'
+              + '<div class="modal-footer"><button type="button" class="btn btn-danger" data-dismiss="modal" data-action="delete-project">I Regret Nothing!</button></div>'
+              + '</div></div></div>';
   
     ui.append(ctrlv);
 
