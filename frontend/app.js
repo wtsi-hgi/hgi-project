@@ -279,7 +279,7 @@ var view = {
     }
 
     // Controller
-    var ctrlv = 
+    ui.append(
       '<div class="btn-toolbar">'
     +   '<div class="btn-group">'
     +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
@@ -312,9 +312,8 @@ var view = {
     +       '</div>'
     +     '</div>'
     +   '</div>'
-    + '</div>';
-  
-    ui.append(ctrlv);
+    + '</div>'
+    );
 
     // Populate remove user dropdown
     (function() {
