@@ -119,11 +119,41 @@ var switchNavbar = function(which) {
   nb.children('li[data-id=' + which + ']').toggleClass('active');
 };
 
+// Generic controller constructors
+var protoCtrl = {
+  put: function() {
+    // TODO
+  },
+
+  post: function() {
+    // TODO
+  },
+
+  delete: function() {
+    // TODO
+  }
+};
+
+var ctrl = {
+  // Projects controller
+  projects: function() {},
+
+  // Project controller
+  project: function() {},
+
+  // Users controller
+  users: function() {},
+
+  // User controller
+  user: function() {}
+};
+
 // Generic view constructor
-var protoview = function(nav, content) {
+var protoView = function(nav, content) {
   return function(data) {
-    // Empty UI container
+    // Empty UI container and unbind all event handlers
     ui.empty();
+    ui.off();
     
     // Create content
     content(data);
@@ -152,7 +182,7 @@ var view = {
   },
 
   // Landing page view
-  home: protoview('home', function(data) {
+  home: protoView('home', function(data) {
     var list = Object.keys(data.resources).map(function(res) {
       return '<li><a href="#' + data.resources[res].href + '" rel="' + res + '">' + res + '</a></li>';
     }).join('');
@@ -174,7 +204,7 @@ var view = {
   }),
 
   // Project collection view
-  projects: protoview('projects', function(data) {
+  projects: protoView('projects', function(data) {
     var list = data.map(function(proj) {
       return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
     }).join('');
@@ -185,7 +215,7 @@ var view = {
   }),
 
   // Project view
-  project: protoview('projects', function(data) {
+  project: protoView('projects', function(data) {
     // Merge project ownership into membership
     var list = (function() {
       var ownerOf = {};
@@ -221,10 +251,47 @@ var view = {
       ui.append('<p>' + data.members.length + ' users:</p>');
       ui.append('<ul>' + list + '</ul>');
     }
+
+    // Controller
+    var ctrlv = '<div class="btn-toolbar"><div class="btn-group">'
+              + '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
+              + 'Add User <span class="caret"></span></button>'
+              + '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="users"></ul></div>'
+              + '<button type="button" class="btn btn-danger" data-action="delete-project">Delete this Project</button>'
+              + '</div>';
+  
+    ui.append(ctrlv);
+
+    // Populate dropdown
+    request('/users/', function(data) {
+      var dropdown = ui.find('ul[data-list=users]');
+
+      dropdown.append(data.map(function(user) {
+        return '<li><a data-action="add-user">' + user.username + '</a></li>';
+      }).join(''));
+    });
+
+    // Assign functionality to buttons
+    ui.click(function(e) {
+      var widget = $(e.target),
+          action = widget.data('action');
+
+      switch (action) {
+        case 'add-user':
+          // TODO
+          console.log(widget.text());
+          break;
+
+        case 'delete-project':
+          // TODO
+          console.log('delete');
+          break;
+      }
+    });
   }),
 
   // User collection view
-  users: protoview('users', function(data) {
+  users: protoView('users', function(data) {
     var list = data.map(function(user) {
       return '<li><a href="#' + user.link.href + '" rel="' + user.link.rel+ '">' + user.username + '</a></li>';
     }).join('');
@@ -235,7 +302,7 @@ var view = {
   }),
 
   // User view
-  user: protoview('users', function(data) {
+  user: protoView('users', function(data) {
     // Merge project ownership into membership
     var list = (function() {
       var ownerOf = {};
@@ -275,7 +342,7 @@ var view = {
   }),
 
   // Unknown data view
-  wtf: protoview('', function(data) {
+  wtf: protoView('', function(data) {
     ui.append('<h1>Unknown Endpoint</h1>');
   })
 };
