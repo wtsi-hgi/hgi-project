@@ -137,9 +137,10 @@ var protoCtrl = function(url, methods) {
   var generic = {
     // Generic PUT method
     put: function(data) {
-      // TODO
-      //console.log(data);
-      console.log(resolveURL(data));
+      var me = resolveURL(data);
+      request(me, 'PUT', data, function() {
+        view.project(data);
+      });
     },
 
     // Generic POST method
@@ -309,7 +310,7 @@ var view = {
     +     '<div class="modal-content">'
     +       '<div class="modal-header"><h4 class="modal-title">L\'Appel du Vide</h4></div>'
     +       '<div class="modal-body">'
-    +         'Are you sure you want to delete this project? This operation'
+    +         'Are you sure you want to delete this project? This operation '
     +         'cannot be undone.'
     +       '</div>'
     +       '<div class="modal-footer">'
@@ -323,7 +324,16 @@ var view = {
   
     ui.append(ctrlv);
 
-    // Populate dropdown
+    // Populate remove user dropdown
+    (function() {
+      var dropdown = ui.find('ul[data-list=kill]');
+
+      dropdown.append(data.members.map(function(m, i) {
+        return '<li><a data-action="delete-user" data-index="' + i + '">' + m.username + '</a></li>'
+      }).join(''));
+    })();
+
+    // Populate add user dropdown
     request('/users/', function(data) {
       var dropdown = ui.find('ul[data-list=users]');
 
@@ -347,7 +357,8 @@ var view = {
           break;
 
         case 'delete-user':
-          console.log('foo');
+          data.members.splice(widget.data('index'), 1);
+          ctrl.project.put(data);
           break;
 
         case 'delete-project':
