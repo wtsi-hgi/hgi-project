@@ -65,10 +65,11 @@ var request = (function() {
     }
 
     $.ajax({
-      url:      apiRoot + url,
-      method:   method,
-      data:     data,
-      dataType: 'json',
+      url:         apiRoot + url,
+      method:      method,
+      data:        data,
+      dataType:    'json',
+      contentType: 'application/json',
 
       // Set the bearer token in the request
       headers: (function() {
@@ -138,7 +139,7 @@ var protoCtrl = function(url, methods) {
     // Generic PUT method
     put: function(data) {
       var me = resolveURL(data);
-      request(me, 'PUT', data, function() {
+      request(me, 'PUT', JSON.stringify(data), function() {
         location.reload();
       });
     },
