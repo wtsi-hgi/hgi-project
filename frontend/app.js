@@ -255,7 +255,8 @@ var view = {
 
   // Project view
   project: protoView('projects', function() {
-    var data = ui.data('model');
+    var data = ui.data('model'),
+        diff = {add:{}, del: {}};
 
     var list = function(users) {
       return users.map(function(u) {
@@ -290,21 +291,25 @@ var view = {
       '<h2>Manage Project</h2>'
     + '<div class="btn-toolbar">'
     +   '<div class="btn-group">'
-    +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
+    +     '<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'
     +       'Add User <span class="caret"></span>'
     +     '</button>'
     +     '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="users"></ul>'
     +   '</div>'
     +   '<div class="btn-group">'
-    +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
+    +     '<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">'
     +       'Remove User <span class="caret"></span>'
     +     '</button>'
     +     '<ul class="dropdown-menu scrollable-menu" role="menu" data-list="kill"></ul>'
     +   '</div>'
+    +   '<button type="button" class="btn btn-primary" disabled="disabled" data-action="commit-changes">'
+    +     'Commit Changes'
+    +   '</button>'
     +   '<button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDelete">'
     +     'Delete this Project'
     +   '</button>'
     + '</div>'
+    + '<p><ul id="model-diff"></ul></p>'
     + '<div class="modal fade" tabindex="-1" id="confirmDelete" role="dialog">'
     +   '<div class="modal-dialog modal-sm">'
     +     '<div class="modal-content">'
@@ -341,6 +346,24 @@ var view = {
       }).join(''));
     });
 
+    // Update diff view
+    var viewDiff = (function() {
+      var $diff = ui.find('#model-diff');
+
+      return function() {
+        var toAdd = Object.keys(diff.add),
+            toDel = Object.keys(diff.del);
+
+        var list = '';
+
+        toDel.forEach(function(a) { list += '<li>Remove ' + a + '</li>'; });
+        toAdd.forEach(function(a) { list += '<li>Add ' + a + '</li>'; });
+
+        $diff.empty();
+        $diff.append(list);
+      };
+    })();
+
     // Assign functionality to buttons
     ui.click(function(e) {
       var widget = $(e.target),
@@ -348,15 +371,43 @@ var view = {
 
       switch (action) {
         case 'add-user':
-          // TODO Check for duplicates
           var newUser = widget.data('user');
           newUser.link.rel = 'x-member';
-          data.members.push(newUser);
-          ctrl.project.put(data);
+          
+          // Check for conflicts
+          // TODO Check for duplicates (i.e., current project members)
+          if (diff.del.hasOwnProperty(newUser.username)) {
+            delete diff.del[newUser.username];
+          } else {
+            diff.add[newUser.username] = newUser;
+          }
+
+          ui.find('button[data-action=commit-changes]').removeAttr('disabled');
+          viewDiff();
           break;
 
         case 'delete-user':
-          data.members.splice(widget.data('index'), 1);
+          var delUser = widget.data('index');
+          diff.del[widget.text()] = delUser;
+
+          ui.find('button[data-action=commit-changes]').removeAttr('disabled');
+          viewDiff();
+          break;
+
+        case 'commit-changes':
+          // Apply diff
+          var toRemove = [];
+          for (a in diff.del) { toRemove.push(diff.del[a]); }
+
+          // Reverse the list, so we don't screw up indices when deleting
+          toRemove.sort(function(a, b) { return b - a; })
+                  .forEach(function(i) {
+                    data.members.splice(i, 1);
+                  });
+
+          // Add new users
+          for (a in diff.add) { data.members.push(diff.add[a]); }
+
           ctrl.project.put(data);
           break;
 
