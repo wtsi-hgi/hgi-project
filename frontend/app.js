@@ -313,7 +313,7 @@ var view = {
     +     'Delete this Project'
     +   '</button>'
     + '</div>'
-    + '<p><ul id="model-diff"></ul></p>'
+    + '<p><ul data-list="diff"></ul></p>'
     + '<div class="modal fade" tabindex="-1" id="confirmDelete" role="dialog">'
     +   '<div class="modal-dialog modal-sm">'
     +     '<div class="modal-content">'
@@ -347,12 +347,12 @@ var view = {
 
       dropdown.append(data.map(function(user) {
         return '<li><a data-action="add-user" data-user=\'' + JSON.stringify(user) + '\'>' + user.username + '</a></li>';
-      }).join(''));
+      }).sort().join(''));
     });
 
     // Update diff view
     var viewDiff = (function() {
-      var $diff = ui.find('#model-diff');
+      var $diff = ui.find('ul[data-list=diff]');
 
       return function() {
         var toAdd = Object.keys(diff.add),
