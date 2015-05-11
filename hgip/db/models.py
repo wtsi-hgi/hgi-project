@@ -88,7 +88,8 @@ class Project(Base):
 
     def __str__(self):
         return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
-    
+
+
 
 class Prelim(Base):
     __versioned__ = {}

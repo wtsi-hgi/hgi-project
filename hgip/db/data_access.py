@@ -21,6 +21,18 @@ This file has been created on Apr 20, 2015.
 
 import models as m
 
+class DBOperations:
+
+    # TODO: check what exceptions does db.session.commit raise and catch them in the calling function
+    @staticmethod
+    def _commit_or_rollback(db):
+        try:
+            db.session.commit()
+        except:
+            db.session.rollback()
+            raise
+
+
 class UserDataAccess:
 
     @staticmethod
@@ -50,21 +62,15 @@ class UserDataAccess:
     @staticmethod
     def add_user(db, user):
         db.session.add(user)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            #return '', 500
-            raise
+        DBOperations._commit_or_rollback(db)
 
     @staticmethod
-    def delete_user(db, user):
+    def delete_user(db, username):
+        user = UserDataAccess.get_user(db, username)
+        if not user:
+            raise LookupError
         db.session.delete(user)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            raise
+        DBOperations._commit_or_rollback(db)
 
 
 class ProjectDataAccess:
@@ -86,20 +92,81 @@ class ProjectDataAccess:
         return None
 
     @staticmethod
+    def create_and_save_project(db, name, gid, owners_uids, users_uids, sec_level="2-Standard"):
+        project = m.Project(name=name, gid=gid, sec_level=sec_level)
+        owners = []
+        for owner in owners_uids:
+            owner = UserDataAccess.get_user(db, owner)
+            owners.append(owner)
+        project.owners = owners
+
+        users = []
+        for user in users_uids:
+            user = UserDataAccess.get_user(db, user)
+            users.append(user)
+        project.users = users
+
+        ProjectDataAccess.add_project(db, project)
+        return project
+
+
+    # TODO: this should get a project name, and do the search project by name and add as a transaction!!!
+    @staticmethod
     def add_project(db, project):
         db.session.add(project)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            #return '', 500
-            raise
+        DBOperations._commit_or_rollback(db)
 
     @staticmethod
-    def delete_project(db, project):
+    def update_project(db, name, gid, users_uids, owners_uids, sec_level="2-Standard"):
+        project = ProjectDataAccess.get_project(db, name)
+        project.gid = gid
+        #project.sec_level = sec_level  # For some reason it doesn't work for security level, it's the way it is declared. There's an issue open on it.
+        owners = []
+        for owner in owners_uids:
+            owner = UserDataAccess.get_user(db, owner)
+            owners.append(owner)
+        project.owners = owners
+
+        users = []
+        for user in users_uids:
+            user = UserDataAccess.get_user(db, user)
+            users.append(user)
+        project.users = users
+
+        project.users = users
+        project.owners = owners
+
+        db.session.add(project)
+        DBOperations._commit_or_rollback(db)
+
+    @staticmethod
+    def delete_project(db, name):
+        project = ProjectDataAccess.get_project(db, name)
+        if not project:
+            raise LookupError
         db.session.delete(project)
-        try:
-            db.session.commit()
-        except:
-            db.session.rollback()
-            raise
+        DBOperations._commit_or_rollback(db)
+
+    @staticmethod
+    def add_user_to_project(db, project, user):
+        project.users.append(user)
+        db.session.add(project)
+        DBOperations._commit_or_rollback(db)
+
+    @staticmethod
+    def remove_user_from_project(db, project, user):
+        project.users.remove(user)
+        db.session.add(project)
+        DBOperations._commit_or_rollback(db)
+
+    @staticmethod
+    def add_owner_to_project(db, project, user):
+        project.owners.append(user)
+        db.session.add(project)
+        DBOperations._commit_or_rollback(db)
+
+    @staticmethod
+    def remove_owner_from_project(db, project, user):
+        project.owners.remove(user)
+        db.session.add(project)
+        DBOperations._commit_or_rollback(db)
