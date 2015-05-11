@@ -129,7 +129,8 @@ var protoCtrl = function(url, methods) {
         resolved;
 
     tags.forEach(function(t) {
-      resolved = url.replace(new RegExp(t, 'g'), data[t.slice(1)])
+      var repl = data === null ? '' : data[t.slice(1)];
+      resolved = url.replace(new RegExp(t, 'g'), repl)
     });
 
     return resolved;
@@ -146,13 +147,18 @@ var protoCtrl = function(url, methods) {
 
     // Generic POST method
     post: function(data) {
-      // TODO
+      var collection  = resolveURL(null),
+          subordinate = resolveURL(data);
+
+      request(collection, 'POST', JSON.stringify(data), function() {
+        location.hash = '#' + subordinate;
+      });
     },
 
     // Generic DELETE method
     delete: function(data) {
       var toDelete   = resolveURL(data),
-          collection = resolveURL({name: ''});
+          collection = resolveURL(null);
 
       request(toDelete, 'DELETE', function() {
         location.hash = '#' + collection;
@@ -169,18 +175,12 @@ var protoCtrl = function(url, methods) {
   return output;
 };
 
+// Controllers
 var ctrl = {
-  // Projects controller
-  projects: undefined,
-
-  // Project controller
-  project: protoCtrl('/projects/:name', ['put', 'delete']),
-
-  // Users controller
-  users: undefined,
-
-  // User controller
-  user: undefined
+  projects: protoCtrl('/projects/:name',     ['post']),
+  project:  protoCtrl('/projects/:name',     ['put', 'delete']),
+  users:    protoCtrl('/projects/:username', ['post']),
+  user:     protoCtrl('/projects/:username', ['put', 'delete'])
 };
 
 // Generic view constructor
