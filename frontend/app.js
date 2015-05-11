@@ -247,10 +247,10 @@ var view = {
 
     var list = data.map(function(proj) {
       return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
-    }).join('');
+    }).sort().join('');
 
     ui.append('<h1>Projects</h1>');
-    ui.append('<p>' + data.length + ' found</p>');
+    ui.append('<p>' + data.length + ' found:</p>');
     ui.append('<ul>' + list + '</ul>');
   }),
 
@@ -433,10 +433,10 @@ var view = {
 
     var list = data.map(function(user) {
       return '<li><a href="#' + user.link.href + '" rel="' + user.link.rel+ '">' + user.username + '</a></li>';
-    }).join('');
+    }).sort().join('');
 
     ui.append('<h1>Users</h1>');
-    ui.append('<p>' + data.length + ' found</p>');
+    ui.append('<p>' + data.length + ' found:</p>');
     ui.append('<ul>' + list + '</ul>');
   }),
 
