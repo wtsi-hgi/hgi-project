@@ -139,7 +139,7 @@ var protoCtrl = function(url, methods) {
     put: function(data) {
       var me = resolveURL(data);
       request(me, 'PUT', data, function() {
-        view.project(data);
+        location.reload();
       });
     },
 
@@ -189,8 +189,9 @@ var protoView = function(nav, content) {
     ui.empty();
     ui.off();
     
-    // Create content
-    content(data);
+    // Assign model and create content
+    ui.data('model', data);
+    content();
 
     // Show data
     if (data) {
@@ -216,7 +217,9 @@ var view = {
   },
 
   // Landing page view
-  home: protoView('home', function(data) {
+  home: protoView('home', function() {
+    var data = ui.data('model');
+
     var list = Object.keys(data.resources).map(function(res) {
       return '<li><a href="#' + data.resources[res].href + '" rel="' + res + '">' + res + '</a></li>';
     }).join('');
@@ -238,7 +241,9 @@ var view = {
   }),
 
   // Project collection view
-  projects: protoView('projects', function(data) {
+  projects: protoView('projects', function() {
+    var data = ui.data('model');
+
     var list = data.map(function(proj) {
       return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
     }).join('');
@@ -249,7 +254,9 @@ var view = {
   }),
 
   // Project view
-  project: protoView('projects', function(data) {
+  project: protoView('projects', function() {
+    var data = ui.data('model');
+
     var list = function(users) {
       return users.map(function(u) {
         return '<li><a href="#' + u.link.href + '" rel="' + u.link.rel + '">' + u.username + '</a></li>';
@@ -280,7 +287,8 @@ var view = {
 
     // Controller
     ui.append(
-      '<div class="btn-toolbar">'
+      '<h2>Manage Project</h2>'
+    + '<div class="btn-toolbar">'
     +   '<div class="btn-group">'
     +     '<button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">'
     +       'Add User <span class="caret"></span>'
@@ -360,7 +368,9 @@ var view = {
   }),
 
   // User collection view
-  users: protoView('users', function(data) {
+  users: protoView('users', function() {
+    var data = ui.data('model');
+
     var list = data.map(function(user) {
       return '<li><a href="#' + user.link.href + '" rel="' + user.link.rel+ '">' + user.username + '</a></li>';
     }).join('');
@@ -371,7 +381,9 @@ var view = {
   }),
 
   // User view
-  user: protoView('users', function(data) {
+  user: protoView('users', function() {
+    var data = ui.data('model');
+
     var list = function(users) {
       return users.map(function(u) {
         return '<li><a href="#' + u.link.href + '" rel="' + u.link.rel + '">' + u.name + '</a></li>';
@@ -403,7 +415,7 @@ var view = {
   }),
 
   // Unknown data view
-  wtf: protoView('', function(data) {
+  wtf: protoView('', function() {
     ui.append('<h1>Unknown Endpoint</h1>');
   })
 };
