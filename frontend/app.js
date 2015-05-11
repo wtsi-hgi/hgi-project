@@ -177,10 +177,10 @@ var protoCtrl = function(url, methods) {
 
 // Controllers
 var ctrl = {
-  projects: protoCtrl('/projects/:name',     ['post']),
-  project:  protoCtrl('/projects/:name',     ['put', 'delete']),
-  users:    protoCtrl('/projects/:username', ['post']),
-  user:     protoCtrl('/projects/:username', ['put', 'delete'])
+  projects: protoCtrl('/projects/:name',  ['post']),
+  project:  protoCtrl('/projects/:name',  ['put', 'delete']),
+  users:    protoCtrl('/users/:username', ['post']),
+  user:     protoCtrl('/users/:username', ['put', 'delete'])
 };
 
 // Generic view constructor
@@ -243,7 +243,7 @@ var view = {
 
   // Project collection view
   projects: protoView('projects', function() {
-    var data    = ui.data('model');
+    var data = ui.data('model');
 
     var list = data.map(function(proj) {
       return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
