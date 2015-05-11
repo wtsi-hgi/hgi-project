@@ -243,7 +243,7 @@ var view = {
 
   // Project collection view
   projects: protoView('projects', function() {
-    var data = ui.data('model');
+    var data    = ui.data('model');
 
     var list = data.map(function(proj) {
       return '<li><a href="#' + proj.link.href + '" rel="' + proj.link.rel+ '">' + proj.name + '</a></li>';
@@ -256,8 +256,9 @@ var view = {
 
   // Project view
   project: protoView('projects', function() {
-    var data = ui.data('model'),
-        diff = {add:{}, del: {}};
+    var data    = ui.data('model'),
+        diff    = {add:{}, del: {}},
+        members = data.members.map(function(m) { return m.username; });
 
     var list = function(users) {
       return users.map(function(u) {
@@ -267,10 +268,12 @@ var view = {
 
     ui.append('<h1>Project Profile</h1>');
 
-    ui.append('<dl>' +
-              '<dt>Name</dt><dd><a href="#' + data.self.href + '" rel="self">' + data.name + '</a></dd>' +
-              '<dt>Group ID</dt><dd>' + data.gid + '</dd>' +
-              '</dl>');
+    ui.append(
+      '<dl>'
+    +   '<dt>Name</dt><dd><a href="#' + data.self.href + '" rel="self">' + data.name + '</a></dd>'
+    +   '<dt>Group ID</dt><dd>' + data.gid + '</dd>'
+    + '</dl>'
+    );
 
     // TODO Refactor
     if (data.members.length || data.owners.length) {
@@ -372,19 +375,24 @@ var view = {
 
       switch (action) {
         case 'add-user':
-          var newUser = widget.data('user');
+          var newUser = widget.data('user'),
+              changed = false;
+
           newUser.link.rel = 'x-member';
           
           // Check for conflicts
-          // TODO Check for duplicates (i.e., current project members)
           if (diff.del.hasOwnProperty(newUser.username)) {
             delete diff.del[newUser.username];
-          } else {
+            changed = true;
+          } else if (members.indexOf(newUser.username) == -1) {
             diff.add[newUser.username] = newUser;
+            changed = true;
           }
 
-          ui.find('button[data-action=commit-changes]').removeAttr('disabled');
-          viewDiff();
+          if (changed) {
+            ui.find('button[data-action=commit-changes]').removeAttr('disabled');
+            viewDiff();
+          }
           break;
 
         case 'delete-user':
