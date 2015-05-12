@@ -131,7 +131,7 @@ def xhtml_rep(data, status_code, headers=None):
             ))
     return resp
 
-    
+
 # @api.representation('application/xml')
 # def xml_rep(data, status_code, headers):
 #     #        resp = make_response(convert_data_to_xml(data), code)
@@ -334,22 +334,27 @@ class Project(AuthenticatedResource):
             abort(404, message="Project {0} doesn't exist.".format(name))
         return project
 
-    def delete(self, name, token):
-        project = data_access.ProjectDataAccess.get_project(db, name)
-        if project:
-            data_access.ProjectDataAccess.delete_project(db, project)
-            return '', 204
-        return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
-        
-    def put(self, name, token):
+    def delete(self, name):
+        try:
+            data_access.ProjectDataAccess.delete_project(db, name)
+        except LookupError:
+            return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
+        return '', 204
+
+    def put(self, name): #  name, gid, sec_level, users_uids, owners_uids):
         # parsing arguments from the request:
         parser = reqparse.RequestParser()
         parser.add_argument('gid', type=int)
         parser.add_argument('sec_level', type=str, default="2-Standard")
+        parser.add_argument('users', type=str, action='append')
+        parser.add_argument('owners', type=str, action='append')
         args = parser.parse_args()
+
 
         # Here you assume that the gid is the only thing that can be changed...
         print "IN PUT....received data: " + str(args)
+        data_access.ProjectDataAccess.update_project(db, name, args['gid'], args['users'], args['owners'])
+
         # project = m.Project(name=name, gid=args.get('gid'), sec_level=args.get('sec_level'))
         # print "IN PUT ---- project created: " + str(project)
         # db.session.add(project)
@@ -361,7 +366,6 @@ class Project(AuthenticatedResource):
         #     raise
         # return project, 201
         return '', 201
-
 
 
 
@@ -378,12 +382,13 @@ class ProjectList(AuthenticatedResource):
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True)
         parser.add_argument('gid', type=int, required=True)
-        #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to save to DB
-        args = parser.parse_args()
+        #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to add to DB
+        parser.add_argument('owners', type=str, action='append', required=True)
+        parser.add_argument('users', type=str,action='append', required=True)
+        args = parser.parse_args(strict=True)
 
-        # Adding a new project:
-        project = m.Project(name=args.get('name'), gid=args.get('gid'), sec_level=args.get('sec_level'))
-        data_access.ProjectDataAccess.add_project(db, project)
+        # Adding a new project: #  name, gid, owners_uids, users_uids, sec_level="2-Standard"):
+        project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], args['owners'], args['users'])
         return project, 201
 
 class User(AuthenticatedResource):
@@ -394,21 +399,32 @@ class User(AuthenticatedResource):
             abort(404, message="User {0} doesn't exist.".format(username))
         return user
 
-    def delete(self, username, token):
-        user = data_access.UserDataAccess.get_user(db, username)
-        if user:
-            data_access.UserDataAccess.delete_user(db, user)
-            return '', 204
-        return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
+
+    def delete(self, username):
+        try:
+            data_access.UserDataAccess.delete_user(db, username)
+        except LookupError:
+            return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
+        return '', 204
+
 
     def put(self, username, token):
         parser = reqparse.RequestParser()
         parser.add_argument('uid', type=int)
         parser.add_argument('farm_user', type=bool)
-        args = parser.parse_args()
+        parser.add_argument('project_name', type=str, action='append')
+        args = parser.parse_args(strict=True)
 
-        print "IN PUT on user url, data received: " + str(args)
-        abort(500, message="Put not implemented.")
+        user = data_access.UserDataAccess.get_user(db, username)
+
+
+        # project = data_access.ProjectDataAccess.get_project(db, 'hgi')
+        # user = data_access.UserDataAccess.get_user(db, 'ic4')
+        # #data_access.ProjectDataAccess.remove_user_from_project(db, project, user)
+        #data_access.ProjectDataAccess.remove_owner_from_project(db, project, user)
+        print "IN PUT -----TESTING..........."
+        #print "IN PUT on user url, data received: " + str(args)
+        #abort(500, message="Put not implemented.")
 
 class UserList(AuthenticatedResource):
     @marshal_with(user_list_fields)
@@ -424,7 +440,7 @@ class UserList(AuthenticatedResource):
         parser.add_argument('username', type=str, required=True)
         parser.add_argument('uid', type=int, required=True)
         parser.add_argument('farm_user', type=bool)
-        args = parser.parse_args()
+        args = parser.parse_args(strict=True)
 
         user = m.User(username=args.get('username'))
         data_access.UserDataAccess.add_user(db, user)
@@ -450,7 +466,7 @@ class HomeDocument(AuthenticatedResource):
 ##
 ## Actually setup the Api resource routing here
 ##
-## N.B. URL variables used in reverse routing must match the attribute name 
+## N.B. URL variables used in reverse routing must match the attribute name
 ## used in the actual model object returned (before marshalling).
 api.add_resource(ProjectList, '/projects/')
 api.add_resource(Project, '/projects/<string:name>')
