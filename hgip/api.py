@@ -346,8 +346,8 @@ class Project(AuthenticatedResource):
         parser = reqparse.RequestParser()
         parser.add_argument('gid', type=int)
         parser.add_argument('sec_level', type=str, default="2-Standard")
-        parser.add_argument('members', type=str, action='append')
-        parser.add_argument('owners', type=str, action='append')
+        parser.add_argument('members', type=dict, action='append')
+        parser.add_argument('owners', type=dict, action='append')
         args = parser.parse_args()
         
         # Here you assume that the gid is the only thing that can be changed...
