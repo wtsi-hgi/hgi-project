@@ -1,7 +1,7 @@
 // GPLv3 or later
 // Copyright (c) 2015 Genome Research Limited
 
-// XHR request wrapper with preflight token authentication {{{
+// XHR request wrapper with preflight token authentication <%
 var request = (function() {
   // API and token provider URLs
   var apiRoot       = 'http://dockerhost',
@@ -11,7 +11,7 @@ var request = (function() {
       attempts    = 0,
       maxAttempts = 3;
 
-  // Get the bearer token {{{
+  // Get the bearer token <%
   var refreshToken = function(callback) {
     ++attempts;
 
@@ -35,13 +35,13 @@ var request = (function() {
       // Good luck with that...
       callback();
     }
-  }; // }}}
+  }; // %>
 
-  // There's no type checking here, so use this carefully {{{
+  // There's no type checking here, so use this carefully <%
   var req = function(/* url, [method = 'GET', [data = undefined,]] success */) {
     var url, method = 'GET', data, success;
 
-    // Parse arguments {{{
+    // Parse arguments <%
     switch (arguments.length) {
       case 2:
         url     = arguments[0];
@@ -64,9 +64,9 @@ var request = (function() {
       default:
         throw new Error('Invalid arguments');
         break;
-    } // }}}
+    } // %>
 
-    // AJAX wrapper {{{
+    // AJAX wrapper <%
     $.ajax({
       url:         apiRoot + url,
       method:      method,
@@ -90,7 +90,7 @@ var request = (function() {
         success(data, status, xhr);
       },
 
-      // Handle any authentication problems {{{
+      // Handle any authentication problems <%
       error: function(xhr, status, err) {
         if (xhr.status == 401 || xhr.status == 403) {
           if (attempts < maxAttempts) {
@@ -108,21 +108,21 @@ var request = (function() {
           console.error('Request failed!')
           throw err;
         }
-      } // }}}
-    }); // }}}
-  }; // }}}
+      } // %>
+    }); // %>
+  }; // %>
 
   return req;
-})(); // }}}
+})(); // %>
 
 // Common UI placeholders
 var nb, ui;
 
-// Generic controller constructor {{{
+// Generic controller constructor <%
 var protoCtrl = function(url, methods) {
   var output = {};
   
-  // Apply tags to templated URLs {{{
+  // Apply tags to templated URLs <%
   var resolveURL = function(data) {
     var tags = url.match(/:[^/]+/g) || [],
         resolved;
@@ -133,18 +133,18 @@ var protoCtrl = function(url, methods) {
     });
 
     return resolved;
-  }; // }}}
+  }; // %>
 
   var generic = {
-    // Generic PUT method {{{
+    // Generic PUT method <%
     put: function(data) {
       var me = resolveURL(data);
       request(me, 'PUT', JSON.stringify(data), function() {
         location.reload();
       });
-    }, // }}}
+    }, // %>
 
-    // Generic POST method {{{
+    // Generic POST method <%
     post: function(data) {
       var collection  = resolveURL(null),
           subordinate = resolveURL(data);
@@ -152,9 +152,9 @@ var protoCtrl = function(url, methods) {
       request(collection, 'POST', JSON.stringify(data), function() {
         location.hash = '#' + subordinate;
       });
-    }, // }}}
+    }, // %>
 
-    // Generic DELETE method {{{
+    // Generic DELETE method <%
     delete: function(data) {
       var toDelete   = resolveURL(data),
           collection = resolveURL(null);
@@ -162,7 +162,7 @@ var protoCtrl = function(url, methods) {
       request(toDelete, 'DELETE', function() {
         location.hash = '#' + collection;
       })
-    } // }}}
+    } // %>
   };
 
   methods.forEach(function(verb) {
@@ -172,17 +172,17 @@ var protoCtrl = function(url, methods) {
   });
 
   return output;
-}; // }}}
+}; // %>
 
-// Controllers {{{
+// Controllers <%
 var ctrl = {
   projects: protoCtrl('/projects/:name',  ['post']),
   project:  protoCtrl('/projects/:name',  ['put', 'delete']),
   users:    protoCtrl('/users/:username', ['post']),
   user:     protoCtrl('/users/:username', ['put', 'delete'])
-}; // }}}
+}; // %>
 
-// Generic view constructor {{{
+// Generic view constructor <%
 var protoView = function(nav, content) {
   var switchNavbar = function(which) {
     nb.children('li.active').toggleClass('active');
@@ -207,11 +207,11 @@ var protoView = function(nav, content) {
     // Switch navbar
     switchNavbar(nav);
   };
-}; // }}}
+}; // %>
 
-// Views {{{
+// Views <%
 var view = {
-  // Navbar view {{{
+  // Navbar view <%
   navbar: function(data) {
     Object.keys(data.resources).forEach(function(rel) {
       var lcRel = rel.split(/\W/).slice(-1)[0].toLowerCase(),
@@ -220,9 +220,9 @@ var view = {
 
       nb.append('<li data-id="' + lcRel + '"><a href="#' + href + '">' + tcRel + '</a></li>');
     });
-  }, // }}}
+  }, // %>
 
-  // Landing page view {{{
+  // Landing page view <%
   home: protoView('home', function() {
     var data = ui.data('model');
 
@@ -244,9 +244,9 @@ var view = {
               'eu fugiat nulla pariatur. Excepteur sint occaecat ' +
               'cupidatat non proident, sunt in culpa qui officia ' +
               'deserunt mollit anim id est laborum.</p>');
-  }), // }}}
+  }), // %>
 
-  // Project collection view {{{
+  // Project collection view <%
   projects: protoView('projects', function() {
     var data = ui.data('model');
 
@@ -257,9 +257,9 @@ var view = {
     ui.append('<h1>Projects</h1>');
     ui.append('<p>' + data.length + ' found:</p>');
     ui.append('<ul>' + list + '</ul>');
-  }), // }}}
+  }), // %>
 
-  // Project view {{{
+  // Project view <%
   project: protoView('projects', function() {
     var data    = ui.data('model'),
         diff    = {add:{}, del: {}},
@@ -295,7 +295,7 @@ var view = {
       ui.append('<ul>' + list(data.owners) + '</ul>');
     }
 
-    // Controller {{{
+    // Controller <%
     ui.append(
       '<h2>Manage Project</h2>'
     + '<div class="btn-toolbar">'
@@ -373,7 +373,7 @@ var view = {
       };
     })();
 
-    // Assign functionality to buttons {{{
+    // Assign functionality to buttons <%
     ui.click(function(e) {
       var widget = $(e.target),
           action = widget.data('action');
@@ -429,11 +429,11 @@ var view = {
           ctrl.project.delete(data);
           break;
       }
-    }); // }}}
-    // }}}
-  }), // }}}
+    }); // %>
+    // %>
+  }), // %>
 
-  // User collection view {{{
+  // User collection view <%
   users: protoView('users', function() {
     var data = ui.data('model');
 
@@ -444,9 +444,9 @@ var view = {
     ui.append('<h1>Users</h1>');
     ui.append('<p>' + data.length + ' found:</p>');
     ui.append('<ul>' + list + '</ul>');
-  }), // }}}
+  }), // %>
 
-  // User view {{{
+  // User view <%
   user: protoView('users', function() {
     var data = ui.data('model');
 
@@ -478,15 +478,15 @@ var view = {
       ui.append('<p>Owner of ' + data.ownerof_projects.length + ' projects:</p>');
       ui.append('<ul>' + list(data.ownerof_projects) + '</ul>');
     }
-  }), // }}}
+  }), // %>
 
-  // Unknown data view {{{
+  // Unknown data view <%
   wtf: protoView('', function() {
     ui.append('<h1>Unknown Endpoint</h1>');
-  }) // }}}
-}; // }}}
+  }) // %>
+}; // %>
 
-// Routing {{{
+// Routing <%
 var route = (function() {
   // Map routes to views... Not very RESTful, but time is against us!
   var viewFrom = (function() {
@@ -515,9 +515,9 @@ var route = (function() {
     endpoint = endpoint.slice(1);
     request(endpoint, viewFrom(endpoint));
   };
-})(); // }}}
+})(); // %>
 
-// Let's do this! {{{
+// Let's do this! <%
 $(document).ready(function() {
   nb = $('#menu'),
   ui = $('#content');
@@ -530,6 +530,6 @@ $(document).ready(function() {
 
   // Route on address change
   $(window).on('popstate', function() { route(location.hash); });
-}); // }}}
+}); // %>
 
-// vim:fdm=marker
+// vim:fdm=marker fmr=<%,%>
