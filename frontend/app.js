@@ -115,8 +115,9 @@ var request = (function() {
   return req;
 })(); // %>
 
-// Common UI placeholders
+// Common UI placeholders <%
 var nb, ui;
+// %>
 
 // Generic controller constructor <%
 var protoCtrl = function(url, methods) {
