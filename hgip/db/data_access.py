@@ -123,15 +123,17 @@ class ProjectDataAccess:
         #project.sec_level = sec_level  # For some reason it doesn't work for security level, it's the way it is declared. There's an issue open on it.
 
         owners = []
-        for owner in owners_uids:
-            owner = UserDataAccess.get_user(db, owner['username'])
-            owners.append(owner)
+        if owners_uids:
+          for owner in owners_uids:
+              owner = UserDataAccess.get_user(db, owner['username'])
+              owners.append(owner)
         project.owners = owners
 
         users = []
-        for user in users_uids:
-            user = UserDataAccess.get_user(db, user['username'])
-            users.append(user)
+        if users_uids:
+          for user in users_uids:
+              user = UserDataAccess.get_user(db, user['username'])
+              users.append(user)
         project.users = users
 
         project.users = users
