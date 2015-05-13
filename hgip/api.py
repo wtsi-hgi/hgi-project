@@ -323,26 +323,25 @@ class Project(AuthenticatedResource):
             abort(404, message="Project {0} doesn't exist.".format(name))
         return project
 
-    def delete(self, name):
+    def delete(self, name, token):
         try:
             data_access.ProjectDataAccess.delete_project(db, name)
         except LookupError:
             return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
         return '', 204
 
-    def put(self, name): #  name, gid, sec_level, users_uids, owners_uids):
+    def put(self, name, token): #  name, gid, sec_level, users_uids, owners_uids):
         # parsing arguments from the request:
         parser = reqparse.RequestParser()
         parser.add_argument('gid', type=int)
         parser.add_argument('sec_level', type=str, default="2-Standard")
-        parser.add_argument('users', type=str, action='append')
-        parser.add_argument('owners', type=str, action='append')
+        parser.add_argument('members', type=dict, action='append')
+        parser.add_argument('owners', type=dict, action='append')
         args = parser.parse_args()
-
-
+        
         # Here you assume that the gid is the only thing that can be changed...
         print "IN PUT....received data: " + str(args)
-        data_access.ProjectDataAccess.update_project(db, name, args['gid'], args['users'], args['owners'])
+        data_access.ProjectDataAccess.update_project(db, name, args['gid'], args['members'], args['owners'])
 
         # project = m.Project(name=name, gid=args.get('gid'), sec_level=args.get('sec_level'))
         # print "IN PUT ---- project created: " + str(project)
