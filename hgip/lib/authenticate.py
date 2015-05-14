@@ -67,7 +67,7 @@ class authDecorators:
 
     except Exception as e:
       # Oh dear...
-      sys.exit('Unable to instantiate authentication token decoder\n' + e)
+      sys.exit('Unable to instantiate authentication token decoder\n' + str(e))
 
     # Token authentication decorator
     def decorator(f):
