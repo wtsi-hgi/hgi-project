@@ -17,25 +17,29 @@
 #
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>. 
-#
-import ConfigParser
-import os
-import json
-import sys
-from functools import wraps
 
+import json
+
+# Flask stuff
 from flask import Flask, request, render_template
-from flask.ext.restful import reqparse, abort, Api, Resource, fields, marshal_with
+from flask.ext.restful import reqparse, abort, Api, fields, marshal_with
 from flask.ext.sqlalchemy import SQLAlchemy
+
+# Local modules
+from lib import *
+
+# Data model
 from db import models as m
 from db import data_access
 
-from xiongxiong import Xiongxiong
-
 app = Flask(__name__)
 
-##### DEVELOPMENT CODE: START
-# CORS Allow all the things...Geez, what a PITA!
+# Configure interfaces
+importConfig(app)
+db = SQLAlchemy(app)
+Resource = authFactory(app)
+
+# CORS Allow all the things
 @app.after_request
 def CORS(response):
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -43,35 +47,6 @@ def CORS(response):
   response.headers.add('Access-Control-Allow-Methods', 'HEAD, GET, POST, PUT, DELETE, OPTIONS')
   response.headers.add('Access-Control-Allow-Credentials', 'true')
   return response
-##### DEVELOPMENT CODE: END
-
-# read configuration from config file
-config = ConfigParser.RawConfigParser()
-config_files = config.read(['/etc/hgi-project.cfg', os.path.expanduser('~/.hgi-project'), 'hgi-project.cfg'])
-
-# configure flask sqlalchemy
-##### DEVELOPMENT CODE: START
-if os.environ.get('DEV'):
-  app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db_dev','uri')
-else:
-##### DEVELOPMENT CODE: END
-  app.config['SQLALCHEMY_DATABASE_URI'] = config.get('db','uri')
-db = SQLAlchemy(app)
-
-# Configure and instantiate token decoder
-##### DEVELOPMENT CODE: START
-if os.environ.get('DEV'):
-  sys.stderr.write('Development Mode: No authentication required!\n')
-else:
-##### DEVELOPMENT CODE: END
-  app.config['TOKEN_KEY_FILE'] = config.get('token', 'secret_key')
-  if config.has_option('token', 'algorithm'):
-    app.config['TOKEN_ALGORITHM'] = config.get('token', 'algorithm')
-  else:
-    app.config['TOKEN_ALGORITHM'] = 'sha1'
-
-  with open(app.config['TOKEN_KEY_FILE'], 'rb') as keyFile:
-    xiongxiong = Xiongxiong(keyFile.read(), app.config['TOKEN_ALGORITHM'])
 
 # setup custom error messages
 errors = {
@@ -265,83 +240,25 @@ user_list_fields = {
     'link': RelatedLink('user', 'self'),
 }
 
-# Authentication exception
-class AuthError(Exception):
-  pass
-
-# Token authentication decorator
-##### DEVELOPMENT CODE: START
-if os.environ.get('DEV'):
-  def authenticateToken(f):
-    @wraps(f)
-    def _(*args, **kwargs):
-      return f(token = None, *args, **kwargs)
-    return _
-else:
-##### DEVELOPMENT CODE: END
-  def authenticateToken(f):
-    @wraps(f)
-    def _(*args, **kwargs):
-      try:
-        try:
-          # Unpack Authorization request header
-          method, payload = request.headers['Authorization'].split()
-          method = method.lower()
-        except (KeyError, ValueError):
-          raise AuthError('No valid authorisation data found')
-
-        # Decode the authorisation payload
-        if method == 'bearer':
-          # Decode bearer token
-          token = xiongxiong(payload)
-
-        elif method == 'basic':
-          try:
-            # Decode basic auth pair
-            token = xiongxiong(request.authorization.username.strip(),
-                               request.authorization.password.strip())
-          except AttributeError:
-            raise AuthError('Invalid basic authorisation pair')
-
-        else:
-          raise AuthError('Invalid authorisation method')
-
-        # Are we good to go?
-        if token.valid:
-          return f(token = token, *args, **kwargs)
-        else:
-          raise AuthError('Invalid token')
-
-      except AuthError as e:
-        # Unauthorised
-        abort(401, message = 'Unauthorised: %s' % e)
-
-    return _
-
-# Subclass Resource with the authentication decorator such that it
-# applies to all requests
-class AuthenticatedResource(Resource):
-  method_decorators = [authenticateToken]
-
 # Project
 #   show a single project item and lets you delete them
-class Project(AuthenticatedResource):
+class Project(Resource):
 
     @marshal_with(project_fields)
-    def get(self, name, token):
+    def get(self, user, roles, name):
         project = data_access.ProjectDataAccess.get_project(db, name)
         if not project:
             abort(404, message="Project {0} doesn't exist.".format(name))
         return project
 
-    def delete(self, name, token):
+    def delete(self, user, roles, name):
         try:
             data_access.ProjectDataAccess.delete_project(db, name)
         except LookupError:
             return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
         return '', 204
 
-    def put(self, name, token): #  name, gid, sec_level, users_uids, owners_uids):
+    def put(self, user, roles, name): #  name, gid, sec_level, users_uids, owners_uids):
         # parsing arguments from the request:
         parser = reqparse.RequestParser()
         parser.add_argument('gid', type=int)
@@ -370,13 +287,13 @@ class Project(AuthenticatedResource):
 
 # ProjectList
 #   shows a list of all projects, and lets you POST to add new project
-class ProjectList(AuthenticatedResource):
+class ProjectList(Resource):
     @marshal_with(project_list_fields)
-    def get(self, token):
+    def get(self, user, roles):
         return data_access.ProjectDataAccess.get_all(db)
 
     @marshal_with(project_fields)
-    def post(self, token):
+    def post(self, user, roles):
         # Getting args from the request:
         parser = reqparse.RequestParser()
         parser.add_argument('name', type=str, required=True)
@@ -390,16 +307,16 @@ class ProjectList(AuthenticatedResource):
         project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], args['owners'], args['users'])
         return project, 201
 
-class User(AuthenticatedResource):
+class User(Resource):
     @marshal_with(user_fields)
-    def get(self, username, token):
+    def get(self, user, roles, username):
         user = data_access.UserDataAccess.get_user(db, username)
         if not user:
             abort(404, message="User {0} doesn't exist.".format(username))
         return user
 
 
-    def delete(self, username):
+    def delete(self, user, roles, username):
         try:
             data_access.UserDataAccess.delete_user(db, username)
         except LookupError:
@@ -407,7 +324,7 @@ class User(AuthenticatedResource):
         return '', 204
 
 
-    def put(self, username, token):
+    def put(self, user, roles, username):
         parser = reqparse.RequestParser()
         parser.add_argument('uid', type=int)
         parser.add_argument('farm_user', type=bool)
@@ -425,16 +342,16 @@ class User(AuthenticatedResource):
         #print "IN PUT on user url, data received: " + str(args)
         #abort(500, message="Put not implemented.")
 
-class UserList(AuthenticatedResource):
+class UserList(Resource):
     @marshal_with(user_list_fields)
-    def get(self, token):
+    def get(self, user, roles):
         return data_access.UserDataAccess.get_all(db)
 
     # TODO: here -- to be discussed. This POST assumes that a new user is always given only by username and only that.
     # TODO: This depends on whether someone can add users through this interface,
     # TODO or the users are being added in LDAP first, and hgi-project-DB is updated acordingly
     @marshal_with(user_fields)
-    def post(self, token):
+    def post(self, user, roles):
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str, required=True)
         parser.add_argument('uid', type=int, required=True)
@@ -446,9 +363,9 @@ class UserList(AuthenticatedResource):
         return user, 201
 
 
-class HomeDocument(AuthenticatedResource):
+class HomeDocument(Resource):
     # http://tools.ietf.org/html/draft-nottingham-json-home-03
-    def get(self, token):
+    def get(self, user, roles):
         data = { 
             "resources": {
                 "http://hgi.sanger.ac.uk/rel/projects": {
