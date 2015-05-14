@@ -371,12 +371,12 @@ class ProjectList(AuthenticatedResource):
         parser.add_argument('name', type=str, required=True)
         parser.add_argument('gid', type=int, required=True)
         #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to add to DB
-        parser.add_argument('owners', type=str, action='append', required=True)
-        parser.add_argument('users', type=str,action='append', required=True)
+        parser.add_argument('owners', type=dict, action='append', required=True)
+        parser.add_argument('members', type=dict,action='append', required=True)
         args = parser.parse_args(strict=True)
 
         # Adding a new project: #  name, gid, owners_uids, users_uids, sec_level="2-Standard"):
-        project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], args['owners'], args['users'])
+        project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], args['owners'], args['members'])
         return project, 201
 
 class User(AuthenticatedResource):
