@@ -1,4 +1,8 @@
-[ldap]
+[general]
+environment = dev
+debug = false
+
+[ldap-dev]
 uri = ldaps://ldap.example.com
 base_dn = dc=example,dc=com
 group_filter = (&(ou:dn:=group)(objectClass=posixGroup))
@@ -13,12 +17,13 @@ group_member_username_attr = memberUid
 #group_search_groupname_fmt = (cn=%s)
 #user_search_username_fmt = (uid=%s)
 
-[db]
+[db-dev]
 uri = mysql://username:password@mysql.example.com:1234/hgi_project_db
 
-[db_dev]
-uri = mysql://username:password@mysql.example.com:1234/hgi_project_db
+[auth-dev]
+method = none
 
-[token]
+[auth-live]
+method = token
 secret_key = /path/to/secret.key
 algorithm = sha1
