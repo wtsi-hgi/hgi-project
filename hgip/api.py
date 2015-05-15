@@ -21,12 +21,12 @@
 import json
 
 # Flask stuff
-from flask import Flask, request, render_template
+from flask import Flask, render_template
 from flask.ext.restful import reqparse, abort, Api, fields, marshal_with
 from flask.ext.sqlalchemy import SQLAlchemy
 
 # Local modules
-from lib import *
+from lib import importConfig, authFactory, CORS
 
 # Data model
 from db import models as m
@@ -34,19 +34,11 @@ from db import data_access
 
 app = Flask(__name__)
 
-# Configure interfaces
+# Configure application and interfaces
 importConfig(app)
 db = SQLAlchemy(app)
 Resource = authFactory(app)
-
-# CORS Allow all the things
-@app.after_request
-def CORS(response):
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  response.headers.add('Access-Control-Allow-Headers', request.headers.get('Access-Control-Request-Headers', '*'))
-  response.headers.add('Access-Control-Allow-Methods', 'HEAD, GET, POST, PUT, DELETE, OPTIONS')
-  response.headers.add('Access-Control-Allow-Credentials', 'true')
-  return response
+app.after_request(CORS.allowALLTheThings)
 
 # setup custom error messages
 errors = {

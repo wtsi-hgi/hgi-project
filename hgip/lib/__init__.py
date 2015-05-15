@@ -3,3 +3,4 @@
 
 from .config import importConfig
 from .authenticate import authFactory
+from .cors import CORS
