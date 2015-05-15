@@ -256,8 +256,8 @@ class Project(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('gid', type=int)
         parser.add_argument('sec_level', type=str, default="2-Standard")
-        parser.add_argument('members', type=dict, action='append')
-        parser.add_argument('owners', type=dict, action='append')
+        parser.add_argument('members', type=dict, action='append', default = [])
+        parser.add_argument('owners', type=dict, action='append', default = [])
         args = parser.parse_args()
         
         members_uids = [member['username'] for member in args['members']]
@@ -285,8 +285,8 @@ class ProjectList(Resource):
         parser.add_argument('name', type=str) #required=True
         parser.add_argument('gid', type=int) #, required=True
         #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to add to DB
-        parser.add_argument('owners', type=dict, action='append')  #, required=True
-        parser.add_argument('members', type=dict, action='append')  #, required=True
+        parser.add_argument('owners', type=dict, action='append', default = [])  #, required=True
+        parser.add_argument('members', type=dict, action='append', default = [])  #, required=True
         args = parser.parse_args() # strict=True - throws 400 error sometimes, if strict=True
 
         print "Params got in POST: " + str(args)
