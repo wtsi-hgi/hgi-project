@@ -238,8 +238,9 @@ class Project(Resource):
 
     @marshal_with(project_fields)
     def get(self, user, roles, name):
-        project = data_access.ProjectDataAccess.get_project(db, name)
-        if not project:
+        try:
+            project = data_access.ProjectDataAccess.get_project(db, name)
+        except LookupError:
             abort(404, message="Project {0} doesn't exist.".format(name))
         return project
 
@@ -247,7 +248,7 @@ class Project(Resource):
         try:
             data_access.ProjectDataAccess.delete_project(db, name)
         except LookupError:
-            return 'The project {0} does not exist, hence cannot be deleted'.format(name), 404
+            return 'The project {0} does not exist, hence cannot be deleted'.format(name), 400
         return '', 204
 
     def put(self, user, roles, name): #  name, gid, sec_level, users_uids, owners_uids):
@@ -259,20 +260,13 @@ class Project(Resource):
         parser.add_argument('owners', type=dict, action='append')
         args = parser.parse_args()
         
-        # Here you assume that the gid is the only thing that can be changed...
-        print "IN PUT....received data: " + str(args)
-        data_access.ProjectDataAccess.update_project(db, name, args['gid'], args['members'], args['owners'])
+        members_uids = [member['username'] for member in args['members']]
+        owners_uids = [owner['username'] for owner in args['owners']]
 
-        # project = m.Project(name=name, gid=args.get('gid'), sec_level=args.get('sec_level'))
-        # print "IN PUT ---- project created: " + str(project)
-        # db.session.add(project)
-        # try:
-        #     db.session.commit()
-        # except:
-        #     db.session.rollback()
-        #     #return '', 500
-        #     raise
-        # return project, 201
+        try:
+            data_access.ProjectDataAccess.update_project(db, name, args['gid'], members_uids, owners_uids)
+        except LookupError as e:
+            return e.message, 400
         return '', 201
 
 
@@ -288,15 +282,22 @@ class ProjectList(Resource):
     def post(self, user, roles):
         # Getting args from the request:
         parser = reqparse.RequestParser()
-        parser.add_argument('name', type=str, required=True)
-        parser.add_argument('gid', type=int, required=True)
+        parser.add_argument('name', type=str) #required=True
+        parser.add_argument('gid', type=int) #, required=True
         #parser.add_argument('sec_level', type=str, default="2-Standard") => causes a problem when trying to add to DB
-        parser.add_argument('owners', type=str, action='append', required=True)
-        parser.add_argument('users', type=str,action='append', required=True)
-        args = parser.parse_args(strict=True)
+        parser.add_argument('owners', type=dict, action='append')  #, required=True
+        parser.add_argument('members', type=dict, action='append')  #, required=True
+        args = parser.parse_args() # strict=True - throws 400 error sometimes, if strict=True
 
-        # Adding a new project: #  name, gid, owners_uids, users_uids, sec_level="2-Standard"):
-        project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], args['owners'], args['users'])
+        print "Params got in POST: " + str(args)
+        members_uids = [member['username'] for member in args['members']]
+        owners_uids = [owner['username'] for owner in args['owners']]
+
+        try:
+            project = data_access.ProjectDataAccess.create_and_save_project(db, args['name'], args['gid'], members_uids, owners_uids)
+        except LookupError as e:
+            print "Throwing an exception.."+str(e)
+            return e.message, 900
         return project, 201
 
 class User(Resource):
@@ -304,7 +305,7 @@ class User(Resource):
     def get(self, user, roles, username):
         user = data_access.UserDataAccess.get_user(db, username)
         if not user:
-            abort(404, message="User {0} doesn't exist.".format(username))
+            abort(400, message="User {0} doesn't exist.".format(username))
         return user
 
 
@@ -312,7 +313,7 @@ class User(Resource):
         try:
             data_access.UserDataAccess.delete_user(db, username)
         except LookupError:
-            return 'The user {0} does not exist, hence cannot be deleted'.format(username), 404
+            return 'The user {0} does not exist, hence cannot be deleted'.format(username), 400
         return '', 204
 
 
@@ -351,7 +352,7 @@ class UserList(Resource):
         args = parser.parse_args(strict=True)
 
         user = m.User(username=args.get('username'))
-        data_access.UserDataAccess.add_user(db, user)
+        data_access.UserDataAccess.save_user(db, user)
         return user, 201
 
 

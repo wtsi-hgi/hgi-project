@@ -84,10 +84,10 @@ class Project(Base):
     owners = relationship('User', secondary=project_user_owners, backref='ownerof_projects')
 
     def __repr__(self):
-        return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
+        return "<Project(name='%s', gid='%s', sec_level='%s', users='%s)>" % (self.name, self.gid, self.sec_level, str(self.users))
 
     def __str__(self):
-        return "<Project(name='%s', gid='%s', sec_level='%s')>" % (self.name, self.gid, self.sec_level)
+        return "<Project(name='%s', gid='%s', sec_level='%s', users='%s)>" % (self.name, self.gid, self.sec_level, str(self.users))
 
 
 

@@ -42,7 +42,6 @@ class UserDataAccess:
     @staticmethod
     def get_user(db, username):
         """
-
         :param db:
         :param username:
         :return: The user found by the username provided as param.
@@ -51,16 +50,15 @@ class UserDataAccess:
         """
         users = db.session.query(m.User).filter(m.User.username == username).all()
         if not users:
-            return None
+            raise LookupError("User "+str(username) + " doesn't exist.")
         nr_users_found = len(users)
         if nr_users_found > 1:
             raise Exception("More than 1 user found in the DATABASE! Quitting.")
         elif nr_users_found == 1:
             return users[0]
-        return None
 
     @staticmethod
-    def add_user(db, user):
+    def save_user(db, user):
         db.session.add(user)
         DBOperations._commit_or_rollback(db)
 
@@ -83,70 +81,56 @@ class ProjectDataAccess:
     def get_project(db, name):
         projects = db.session.query(m.Project).filter(m.Project.name == name).all()
         if not projects:
-            return None
+            raise LookupError("Project "+str(name) + " doesn't exist.")
         nr_projects = len(projects)
         if nr_projects > 1:
-            raise Exception("More than 1 project found in the DATABASE! Quitting.")
+            raise Exception("More than 1 project found in the DATABASE! There's something wrong here..Quitting.")
         elif nr_projects == 1:
             return projects[0]
-        return None
 
+
+    # TODO: is this a transaction?!
     @staticmethod
-    def create_and_save_project(db, name, gid, owners_uids, users_uids, sec_level="2-Standard"):
-        project = m.Project(name=name, gid=gid, sec_level=sec_level)
-        owners = []
-        for owner in owners_uids:
-            owner = UserDataAccess.get_user(db, owner)
-            owners.append(owner)
-        project.owners = owners
-
-        users = []
-        for user in users_uids:
-            user = UserDataAccess.get_user(db, user)
-            users.append(user)
-        project.users = users
-
-        ProjectDataAccess.add_project(db, project)
-        return project
-
-
-    # TODO: this should get a project name, and do the search project by name and add as a transaction!!!
-    @staticmethod
-    def add_project(db, project):
+    def save_project(db, project):
         db.session.add(project)
         DBOperations._commit_or_rollback(db)
+
+
+    @staticmethod
+    def create_and_save_project(db, name, gid, users_uids, owners_uids, sec_level="2-Standard"):
+        project = m.Project(name=name, gid=gid)#, sec_level=sec_level)
+
+        owners = [UserDataAccess.get_user(db, uid) for uid in owners_uids]
+        project.owners = owners
+
+        users = [UserDataAccess.get_user(db, uid) for uid in users_uids]
+        project.users = users
+
+        ProjectDataAccess.save_project(db, project)
+        return project
+
 
     @staticmethod
     def update_project(db, name, gid, users_uids, owners_uids, sec_level="2-Standard"):
         project = ProjectDataAccess.get_project(db, name)
-        project.gid = gid
+        #project.gid = gid
         #project.sec_level = sec_level  # For some reason it doesn't work for security level, it's the way it is declared. There's an issue open on it.
 
-        owners = []
-        if owners_uids:
-          for owner in owners_uids:
-              owner = UserDataAccess.get_user(db, owner['username'])
-              owners.append(owner)
+        owners = [UserDataAccess.get_user(db, uid) for uid in owners_uids]
         project.owners = owners
 
-        users = []
-        if users_uids:
-          for user in users_uids:
-              user = UserDataAccess.get_user(db, user['username'])
-              users.append(user)
+        users = [UserDataAccess.get_user(db, uid) for uid in users_uids]
         project.users = users
 
-        project.users = users
-        project.owners = owners
-
+        print "PROJECT before saving to the DB: " + str(project)
+        #ProjectDataAccess.save_project(db, project)
         db.session.add(project)
         DBOperations._commit_or_rollback(db)
+
 
     @staticmethod
     def delete_project(db, name):
         project = ProjectDataAccess.get_project(db, name)
-        if not project:
-            raise LookupError
         db.session.delete(project)
         DBOperations._commit_or_rollback(db)
 
