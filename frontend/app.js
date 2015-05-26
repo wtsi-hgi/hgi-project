@@ -258,6 +258,34 @@ var view = {
     ui.append('<h1>Projects</h1>');
     ui.append('<p>' + data.length + ' found:</p>');
     ui.append('<ul>' + list + '</ul>');
+
+    // Controller <%
+    ui.append(
+      '<h2>Create New Project</h2>'
+    + '<div class="row">'
+    +   '<div class="col-lg-6">'
+    +     '<div class="input-group">'
+    +       '<input type="text" class="form-control" placeholder="New project name...">'
+    +       '<span class="input-group-btn">'
+    +         '<button class="btn btn-primary" type="button" data-action="create-project">Create</button>'
+    +       '</span>'
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+    );
+
+    ui.click(function(e) {
+      var widget = $(e.target),
+          action = widget.data('action');
+
+      switch (action) {
+        case 'create-project':
+          var newProject = widget.parent().siblings().val();
+          if (newProject) { ctrl.projects.post({name: newProject}); }
+          break;
+      }
+    });
+    // %>
   }), // %>
 
   // Project view <%
