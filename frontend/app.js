@@ -270,6 +270,8 @@ var view = {
     +         '<button class="btn btn-primary" type="button" data-action="create-project">Create</button>'
     +       '</span>'
     +     '</div>'
+    +     '<small>Must start with a lowercase letter, followed by up to '
+    +     '15 lowercase letters, numbers, dashes or underscores.</small>'
     +   '</div>'
     + '</div>'
     );
@@ -280,8 +282,17 @@ var view = {
 
       switch (action) {
         case 'create-project':
-          var newProject = widget.parent().siblings().val();
-          if (newProject) { ctrl.projects.post({name: newProject}); }
+          var newInput = widget.parent().siblings(),
+              newProj  = newInput.val();
+
+          if (/^[a-z][a-z0-9_-]{0,15}$/.test(newProj)) {
+            ctrl.projects.post({name: newProj});
+          } else {
+            newInput.val('');
+            newInput.focus();
+            newInput.parent().addClass('has-error');
+          }
+
           break;
       }
     });
