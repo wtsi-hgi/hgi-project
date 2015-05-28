@@ -18,7 +18,7 @@
 # this program. If not, see <http://www.gnu.org/licenses/>. 
 #
 import sqlalchemy as sa
-import decl_enum as de
+from lib import DeclEnum
 from sqlalchemy_continuum import make_versioned
 from sqlalchemy.ext.declarative import declared_attr, declarative_base
 from sqlalchemy.orm import relationship, backref
@@ -42,13 +42,13 @@ class Base(object):
 Base = declarative_base(cls=Base)
 
 # Application-specific types
-class DataSecurityLevel(de.DeclEnum):
+class DataSecurityLevel(DeclEnum):
     one = "1-OPEN", "1-Open"
     two = "2-STANDARD", "2-Standard"
     three = "3-STRONG", "3-Strong"
     four = "4-PERSONAL", "4-Personal"
 
-class PrelimPrefixType(de.DeclEnum):
+class PrelimPrefixType(DeclEnum):
     g = "G", "G-General Externally Funded"
     i = "I", "I-Internally Funded"
     c = "C", "C-Cytometry Core Facility"

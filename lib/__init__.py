@@ -4,3 +4,4 @@
 from .config import importConfig
 from .authenticate import authFactory
 from .cors import CORS
+from .decl_enum import DeclEnum
