@@ -1,10 +1,8 @@
-# hgi-project
+# HGI Project
 
-HGI Project tracking database with a hypermedia-driven RESTful
-interface.
-
-Also includes components for synchronising with other data sources
-(e.g., LDAP).
+Human genetics informatics project tracking and administration database
+with a hypermedia-driven RESTful interface. Also includes components for
+synchronising with other data sources (e.g., LDAP).
 
 ## Development
 
@@ -16,7 +14,7 @@ docker build -t local/hgi-project . && \
 docker run -v ~/.hgi-project:/etc/hgi-project.cfg \
            -v ~/secret.key:/etc/hgi-project.key \
            local/hgi-project \
-           python hgip/api.py
+           python api/api.py
 ```
 
 This command bind-mounts the `~/.hgi-project` configuration file and
@@ -34,11 +32,11 @@ option) any later version.
 
 This program is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
 
 You should have received a copy of the GNU General Public License along
-with this program.  If not, see <http://www.gnu.org/licenses/>.
+with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ---
 
