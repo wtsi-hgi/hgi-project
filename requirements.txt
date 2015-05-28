@@ -3,6 +3,7 @@ git+https://github.com/wtsi-hgi/flask.git@master#egg=Flask
 git+https://github.com/wtsi-hgi/flask-restful.git@master#egg=Flask-RESTful
 Flask-SQLAlchemy==1.0
 MySQL-python==1.2.5
+SQLAlchemy-Utils==0.30.0
 SQLAlchemy==0.9.4
 SQLAlchemy-Continuum==1.0b5
 argparse==1.2.1

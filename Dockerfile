@@ -19,4 +19,5 @@ RUN pip install -r /docker/requirements.txt
 
 # Install git tree
 ADD . /docker
+ENV PYTHONPATH /docker
 WORKDIR /docker
