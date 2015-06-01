@@ -22,11 +22,11 @@ import json
 
 # Flask stuff
 from flask import Flask, render_template
-from flask.ext.restful import reqparse, abort, Api, fields, marshal_with
+from flask.ext.restful import reqparse, abort, Resource, Api, fields, marshal_with
 from flask.ext.sqlalchemy import SQLAlchemy
 
 # Local modules
-from lib import importConfig, authFactory, CORS
+from lib import importConfig, authDecorator, CORS
 
 # Data model
 from db import models as m
@@ -37,7 +37,7 @@ app = Flask(__name__)
 # Configure application and interfaces
 importConfig(app)
 db = SQLAlchemy(app)
-Resource = authFactory(app)
+Resource.method_decorators.append(authDecorator(app))
 app.after_request(CORS.allowALLTheThings)
 
 # setup custom error messages

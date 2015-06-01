@@ -117,7 +117,7 @@ class authDecorators:
     return decorator
 
 
-def authFactory(app):
+def authDecorator(app):
   '''
   Authenticated resource factory: Returns a subclass of Flask's
   `Resource` with an authentication decorator
@@ -125,7 +125,4 @@ def authFactory(app):
   authMethod = app.config.get('hgi-auth-method', 'none')
   decorator = getattr(authDecorators, authMethod, authDecorators.none)
 
-  class AuthenticatedResource(Resource):
-    method_decorators = [decorator(app)]
-
-  return AuthenticatedResource
+  return decorator(app)
